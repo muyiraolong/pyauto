@@ -4,8 +4,8 @@ import os
 
 import cx_Oracle
 username= "sys"
-password= "Lenovo_2020"
-host= "oraqu8.inno.com"
+password= "xxxxxx"
+host= "xxxx.inno.com"
 port= 1523
 instance= "c193"
 tns = cx_Oracle.makedsn(host,port,instance)
