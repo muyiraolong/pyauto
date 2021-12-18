@@ -6,7 +6,7 @@ host = 'win88.inno.com'
 port = 3308
 db = 'www'
 user = 'root'
-password = 'Lenovo@2020'
+password = 'xxxxx'
 
 
 # ---- 用pymysql 操作数据库
