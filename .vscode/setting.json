@@ -1,0 +1,5 @@
+{
+    "python.linting.pylintArgs": ["--rcfile=D:/Apps/python/python39/Scripts/.pylintrc"],
+    "python.linting.enabled": true,
+    "python.autoComplete.extraPaths": ["./conf"]
+}

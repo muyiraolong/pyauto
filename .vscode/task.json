@@ -1,0 +1,10 @@
+{
+    "version": "0.1.0",
+    "command": "D:\\Apps\\Python\\Python39",
+    "isShellCommand": true,
+    "args": ["${file}"],
+    "showOutput": "always",
+    "env": {},
+    "envFile": "${workspaceRoot}/.env",
+    "pythonPath": "${config:python.pythonPath}"
+}

@@ -20,7 +20,7 @@ def timecost(func):
     return inner
 
 @timecost
-def execCmd(cmd,vm):
+def ExecCommand(cmd,vm):
     cmd = cmd + " " + "start" + " " + vm + " " + "gui"
     try:
         os.system(cmd)
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     if if_parallel:
         threads = []
         for vm in vms:
-            th = threading.Thread(target=execCmd, args=(cmdvm,vm))
+            th = threading.Thread(target=ExecCommand, args=(cmdvm,vm))
             th.start()
             threads.append(th)
         # 等待线程运行完毕
@@ -55,10 +55,6 @@ if __name__ == '__main__':
     else:
         # 串行
         for cmd in cmds:
-            try:
-                print("Command %s start run%s" % (cmd, datetime.datetime.now()))
-                os.system(cmd)
-                print("Command %s run end %s" % (cmd, datetime.datetime.now()))
-            except:
-                print('%s\t failed' % (cmd))
+            for vm in vms:
+                ExecCommand(cmd, vm)
     gc.collect()
