@@ -1,8 +1,9 @@
 import datetime
-import os
 import gc
+import os
 import threading
 from conf import logconf
+
 
 def timecost(func):
     def inner(*args, **kwargs):
