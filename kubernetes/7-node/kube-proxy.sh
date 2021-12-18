@@ -1,5 +1,6 @@
 #!/bin/bash
 NODE_ADDRESS=$1
+
 cat <<EOF >/etc/kubernetes/cfg/kube-proxy.yaml
 kind: KubeProxyConfiguration
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
