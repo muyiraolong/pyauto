@@ -40,7 +40,6 @@ if __name__ == '__main__':
     
     # 需要执行的命令列表
     cmdvm = r'"D:\\Apps\\VMware\\VMware Workstation\\vmrun.exe"'
-
     vm4 = "E:\inno\win200\win80.vmx"
     vm3 = "H:\inno.com\win70\win80.vmx"
     vm2 = "H:\inno.com\win71\win80.vmx"
