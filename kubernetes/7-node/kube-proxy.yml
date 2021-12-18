@@ -1,0 +1,28 @@
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+bindAddress: 0.0.0.0
+bindAddressHardFail: false
+clientConnection:
+  kubeconfig: /var/lib/kube-proxy/kubeconfig.conf
+clusterCIDR: ""
+configSyncPeriod: 0s
+conntrack:
+  maxPerCore: null
+  min: null
+  tcpCloseWaitTimeout: null
+  tcpEstablishedTimeout: null
+detectLocalMode: ""
+enableProfiling: false
+healthzBindAddress: "10256"
+hostnameOverride: ""
+metricsBindAddress: ""
+mode: ""
+nodePortAddresses: null
+oomScoreAdj: null
+portRange: ""
+showHiddenMetricsForVersion: ""
+udpIdleTimeout: 0s
+winkernel:
+  enableDSR: false
+  networkName: ""
+  sourceVip: ""
