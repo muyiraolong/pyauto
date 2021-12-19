@@ -1,6 +1,6 @@
 {
     "version": "0.1.0",
-    "command": "D:\\Apps\\Python\\Python39",
+    "command": "F:/pyauto/Scripts",
     "isShellCommand": true,
     "args": ["${file}"],
     "showOutput": "always",

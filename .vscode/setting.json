@@ -1,5 +1,15 @@
 {
-    "python.linting.pylintArgs": ["--rcfile=D:/Apps/python/python39/Scripts/.pylintrc"],
+    "python.linting.flake8CategorySeverity.E": "Information",
+    "python.linting.pylintCategorySeverity.convention": "Hint",
+    "python.linting.pylintPath": "F:/pyauto/Scripts",
+    "python.linting.pylintArgs": ["--rcfile=F:/pyauto/Scripts/.pylintrc"],
     "python.linting.enabled": true,
-    "python.autoComplete.extraPaths": ["./conf"]
+    "python.linting.mypyArgs": [
+        "--follow-imports=silent",
+        "--show-column-numbers",
+        "--no-pretty"
+    ],
+    "code-runner.executorMap": {
+		"python": "python -u",
+	}
 }

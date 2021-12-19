@@ -47,7 +47,6 @@ systemctl daemon-reload;systemctl enable kube-controller-manager;systemctl resta
 # --root-ca-file：放置到容器 ServiceAccount 中的 CA 证书，用来对 kube-apiserver 的证书进行校验；
 # --service-account-private-key-file：签名 ServiceAccount 中 Token 的私钥文件，必须和 kube-apiserver 的 --service-account-key-file 指定的公钥文件配对使用；
 # --service-cluster-ip-range ：指定 Service Cluster IP 网段，必须和 kube-apiserver 中的同名参数一致；
-# --leader-elect=true：集群运行模式，启用选举功能；被选为 leader 的节点负责处理工作，其它节点为阻塞状态；
 # --feature-gates=RotateKubeletServerCertificate=true：开启 kublet server 证书的自动更新特性；
 # --controllers=*,bootstrapsigner,tokencleaner：启用的控制器列表，tokencleaner 用于自动清理过期的 Bootstrap token；
 # --horizontal-pod-autoscaler-*：custom metrics 相关参数，支持 autoscaling/v2alpha1；
@@ -55,3 +54,4 @@ systemctl daemon-reload;systemctl enable kube-controller-manager;systemctl resta
 # --use-service-account-credentials=true:
 # --allocate-node-cidrs=true  use for flanneld
 # --cluster-cidr=10.244.0.0/16 use for flanneld
+# --leader-elect=true：集群运行模式，启用选举功能；被选为 leader 的节点负责处理工作，其它节点为阻塞状态；

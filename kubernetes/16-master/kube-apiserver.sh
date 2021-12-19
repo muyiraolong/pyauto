@@ -7,7 +7,7 @@ KUBE_APISERVER_OPTS="--logtostderr=false \
     --etcd-cafile=/etc/etcd/ssl/ca.pem \
     --etcd-certfile=/etc/etcd/ssl/client.pem \
     --etcd-keyfile=/etc/etcd/ssl/client-key.pem \
-	--bind-address=0.0.0.0 \
+	  --bind-address=0.0.0.0 \
     --secure-port=6443 \
     --advertise-address=${MASTER_ADDRESS} \
     --allow-privileged=true \
@@ -29,16 +29,16 @@ KUBE_APISERVER_OPTS="--logtostderr=false \
     --requestheader-group-headers=X-Remote-Group \
     --requestheader-username-headers=X-Remote-User \
     --runtime-config=api/all=true \
-	--requestheader-allowed-names=''\
-	--proxy-client-key-file=/etc/kubernetes/ssl/client-key.pem \
-	--proxy-client-cert-file=/etc/kubernetes/ssl/client.pem \
+	  --requestheader-allowed-names=''\
+	  --proxy-client-key-file=/etc/kubernetes/ssl/client-key.pem \
+	  --proxy-client-cert-file=/etc/kubernetes/ssl/client.pem \
     --audit-log-maxage=30 \
     --audit-log-maxbackup=3  \
     --audit-log-maxsize=100 \
     --audit-log-truncate-enabled=true  \
     --audit-log-path=/etc/kubernetes/logs/k8s-audit.log \
     --audit-policy-file=/etc/kubernetes/cfg/audit-policy.yaml \
-	--feature-gates=RemoveSelfLink=false \
+	  --feature-gates=RemoveSelfLink=false \
     --anonymous-auth=false"
 
 echo "KUBE_APISERVER_OPTS=$KUBE_APISERVER_OPTS">/etc/kubernetes/cfg/kube-apiserver.conf

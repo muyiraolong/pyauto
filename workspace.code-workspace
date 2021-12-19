@@ -1,8 +1,19 @@
 {
+	"settings": {
+		"python.linting.flake8CategorySeverity.E": "Information",
+		"python.linting.pylintCategorySeverity.convention": "Hint",
+		"python.linting.pylintPath": "D:/Apps/Python/Python39/Scripts",
+		"python.linting.pylintArgs": ["--rcfile=D:/Apps/Python/Python39/Scripts/.pylintrc"],
+		"python.linting.enabled": true,
+		"python.linting.mypyArgs": [
+			"--follow-imports=silent",
+			"--show-column-numbers",
+			"--no-pretty"
+		]
+	},
 	"folders": [
 		{
 			"path": "."
 		}
-	],
-	"settings": {}
+	]
 }
