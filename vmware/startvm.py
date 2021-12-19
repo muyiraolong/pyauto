@@ -1,7 +1,11 @@
 import datetime
 import os
 import gc
+import sys
 import threading
+# path = os.path.dirname(os.path.dirname(__file__))+r"\conf"
+# path = os.path.dirname(os.path.dirname(__file__))
+# sys.path.append(path)
 from conf import logconf
 
 def timecost(func):
@@ -54,7 +58,7 @@ if __name__ == '__main__':
             th.join()
     else:
         # 串行
-        for cmd in cmds:
-            for vm in vms:
-                ExecCommand(cmd, vm)
+        for vm in vms:
+            ExecCommand(cmdvm, vm)
+            
     gc.collect()
