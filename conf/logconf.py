@@ -1,5 +1,5 @@
 import logging
-import sys
+import os,sys
 from conf import newfile
 def logconf(logtarget):
     logger = logging.getLogger('main')
