@@ -40,7 +40,6 @@ KUBE_APISERVER_OPTS="--logtostderr=false \
     --audit-policy-file=/etc/kubernetes/cfg/audit-policy.yaml \
 	  --feature-gates=RemoveSelfLink=false \
     --anonymous-auth=false"
-
 echo "KUBE_APISERVER_OPTS=$KUBE_APISERVER_OPTS">/etc/kubernetes/cfg/kube-apiserver.conf
 export KUBE_APISERVER_OPTS
 cat <<EOF >/usr/lib/systemd/system/kube-apiserver.service
@@ -80,3 +79,4 @@ systemctl daemon-reload && systemctl enable kube-apiserver && systemctl restart 
 #--endpoint-reconciler-type string             Use an endpoint reconciler (master-count, lease, none) (default "lease")		
 #--kubelet-preferred-address-types strings     List of the preferred NodeAddressTypes to use for kubelet connections. \
 # 		     									(default [Hostname,InternalDNS,InternalIP,ExternalDNS,ExternalIP])	
+#—feature-gates=PodShareProcessNamespace=true 1.11后已经默认开启了

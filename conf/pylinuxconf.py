@@ -23,23 +23,11 @@ def timecost(func):
     return inner
 
 # ---- paramiko connect to linux host
-@timecost
+# @timecost
 def get_connection(server, password):
-    try:
-        if password == None:
-            privatekey = paramiko.RSAKey.from_private_key_file(keyfile)
-            conn=ssh_client.connect(server, 22, user, pkey=privatekey)
-        else:
-            conn=ssh_client.connect(server, 22,user,password)
-
-    except paramiko.AuthenticationException:
-        try:
-            conn=ssh_client.connect(server, 22, user, password)
-        except:
-            get_connection(password)
-    except:
-        exit()
-
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(server, 22, 'root', password)
     return conn
 
 # ---- 使用 with 的方式来优化代码
@@ -69,6 +57,7 @@ class paramiko(object):
     def execute(self,sudo=False):
         logfile = logtarget +'.' + server.split('.')[0]+'_'+str(os.getpid())
         logger = logconf.logconf(logfile)  # init log config
+
         commands=""
         path = os.path.dirname(os.getcwd())
         with open("f:\pyauto\conf\command.txt", 'r', encoding='utf-8') as batch:

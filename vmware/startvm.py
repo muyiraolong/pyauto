@@ -42,9 +42,9 @@ if __name__ == '__main__':
     print(cmdvm)
 
     vm1 = "E:\inno\win200\win80.vmx"
-    vm3 = "H:\inno.com\win70\win80.vmx"
+    vm2 = "H:\inno.com\win70\win80.vmx"
     vm4 = "H:\inno.com\win71\win80.vmx"
-    vm2 = "I:\inno.com\win72\win80.vmx"
+    vm3 = "I:\inno.com\win72\win80.vmx"
     vms = [vm1, vm2, vm3, vm4]
 
     if if_parallel:
