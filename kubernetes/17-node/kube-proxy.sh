@@ -32,7 +32,6 @@ ipvs:
   tcpTimeout: 0s
   udpTimeout: 0s  
 EOF
-
 export KUBE_PROXY_OPTS="--logtostderr=false --v=2 --log-dir=/etc/kubernetes/logs/kube-proxy --config=/etc/kubernetes/cfg/kube-proxy.yaml"
 echo "KUBE_PROXY_OPTS=$KUBE_PROXY_OPTS">/etc/kubernetes/cfg/kube-proxy.conf
 
@@ -51,6 +50,5 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload;systemctl enable kube-proxy;systemctl restart kube-proxy
-
 #SupportIPVSProxyMode：if not work ,remove this line
 #clusterCIDR 后面CNI网络的IP段，不能与任何网络重复，否则获报错

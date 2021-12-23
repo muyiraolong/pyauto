@@ -10,8 +10,8 @@ echo "export NODE_IPS=(10.10.10.70 10.10.10.71 10.10.10.72 10.10.10.73)" >> ~/.b
 # 集群各 IP 对应的主机名数组
 echo "export NODE_NAMES=(win70.inno.com win71.inno.com win72.inno.com win73.inno.com)">> ~/.bash_profile
 
-echo "export MASTERIP = 10.10.10.70">> ~/.bash_profile
-echo "export BACKUPIP = 10.10.10.71">> ~/.bash_profile
+echo "export MASTER_ADDRESS = 10.10.10.70">> ~/.bash_profile
+echo "export BACKUP_ADDRESS = 10.10.10.71">> ~/.bash_profile
 
 # etcd 集群服务地址列表
 echo "export ETCD_ENDPOINTS=\"win70=https://win70.inno.com:2379,win71=https://win71.inno.com:2379,win72=https://win72.inno.com:2379\"">> ~/.bash_profile

@@ -58,5 +58,4 @@ ExecStart=/usr/local/etcd/bin/etcd --config-file=/etc/etcd/cfg/etcd.yml
 [Install]
 WantedBy=multi-user.target
 EOF
-
 systemctl daemon-reload;systemctl enable etcd;systemctl restart etcd

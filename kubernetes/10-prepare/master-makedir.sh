@@ -37,7 +37,6 @@ vrrp_instance VI_1 {
 }
 EOF
 
-
 ###for backup master
 cat <<EOF >/etc/keepalived/keepalived.conf
 global_defs {
@@ -70,7 +69,6 @@ vrrp_instance VI_1 {
       chk_apiserver
    }
 }
-
 EOF
 
 cat <<EOF >/etc/keepalived/check_apiserver.sh
