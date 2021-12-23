@@ -30,8 +30,8 @@ KUBE_APISERVER_OPTS="--logtostderr=false \
     --requestheader-username-headers=X-Remote-User \
     --runtime-config=api/all=true \
 	  --requestheader-allowed-names=''\
-	  --proxy-client-key-file=/etc/kubernetes/ssl/client-key.pem \
-	  --proxy-client-cert-file=/etc/kubernetes/ssl/client.pem \
+	  --proxy-client-key-file=/etc/kubernetes/ssl/proxy-client-key.pem \
+	  --proxy-client-cert-file=/etc/kubernetes/ssl/proxy-client.pem \
     --audit-log-maxage=30 \
     --audit-log-maxbackup=3  \
     --audit-log-maxsize=100 \
@@ -42,6 +42,78 @@ KUBE_APISERVER_OPTS="--logtostderr=false \
     --anonymous-auth=false"
 echo "KUBE_APISERVER_OPTS=$KUBE_APISERVER_OPTS">/etc/kubernetes/cfg/kube-apiserver.conf
 export KUBE_APISERVER_OPTS
+cat  <<EOF >/etc/kubernetes/cfg/audit-policy.yaml
+apiVersion: audit.k8s.io/v1 # This is required.
+kind: Policy
+# Don't generate audit events for all requests in RequestReceived stage.
+omitStages:
+  - "RequestReceived"
+rules:
+  # Log pod changes at RequestResponse level
+  - level: RequestResponse
+    resources:
+    - group: ""
+      # Resource "pods" doesn't match requests to any subresource of pods,
+      # which is consistent with the RBAC policy.
+      resources: ["pods"]
+  # Log "pods/log", "pods/status" at Metadata level
+  - level: Metadata
+    resources:
+    - group: ""
+      resources: ["pods/log", "pods/status"]
+
+  # Don't log requests to a configmap called "controller-leader"
+  - level: None
+    resources:
+    - group: ""
+      resources: ["configmaps"]
+      resourceNames: ["controller-leader"]
+
+  # Don't log watch requests by the "system:kube-proxy" on endpoints or services
+  - level: None
+    users: ["system:kube-proxy"]
+    verbs: ["watch"]
+    resources:
+    - group: "" # core API group
+      resources: ["endpoints", "services"]
+
+  # Don't log authenticated requests to certain non-resource URL paths.
+  - level: None
+    userGroups: ["system:authenticated"]
+    nonResourceURLs:
+    - "/api*" # Wildcard matching.
+    - "/version"
+
+  # Log the request body of configmap changes in kube-system.
+  - level: Request
+    resources:
+    - group: "" # core API group
+      resources: ["configmaps"]
+    # This rule only applies to resources in the "kube-system" namespace.
+    # The empty string "" can be used to select non-namespaced resources.
+    namespaces: ["kube-system"]
+
+  # Log configmap and secret changes in all other namespaces at the Metadata level.
+  - level: Metadata
+    resources:
+    - group: "" # core API group
+      resources: ["secrets", "configmaps"]
+
+  # Log all other resources in core and extensions at the Request level.
+  - level: Request
+    resources:
+    - group: "" # core API group
+    - group: "extensions" # Version of group should NOT be included.
+
+  # A catch-all rule to log all other requests at the Metadata level.
+  - level: Metadata
+    # Long-running requests like watches that fall under this rule will not
+    # generate an audit event in RequestReceived.
+    omitStages:
+      - "RequestReceived"
+# refer to https://kubernetes.io/docs/tasks/debug-application-cluster/audit/
+EOF
+
 cat <<EOF >/usr/lib/systemd/system/kube-apiserver.service
 [Unit]
 Documentation=https://github.com/kubernetes/kubernetes
@@ -80,3 +152,8 @@ systemctl daemon-reload && systemctl enable kube-apiserver && systemctl restart 
 #--kubelet-preferred-address-types strings     List of the preferred NodeAddressTypes to use for kubelet connections. \
 # 		     									(default [Hostname,InternalDNS,InternalIP,ExternalDNS,ExternalIP])	
 #—feature-gates=PodShareProcessNamespace=true 1.11后已经默认开启了
+#
+#
+# ---------------------enable PodPreset
+#修改原[ - --runtime-config=api/all=true]为[- --runtime-config=api/all=true,settings.k8s.io/v1alpha1=true], 新加一行[- --enable-admission-plugins=PodPreset]
+#not work for v1225
