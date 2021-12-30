@@ -1,6 +1,6 @@
 #!/bin/bash
-NODE_ADDRESS=$1
-cat <<EOF >/etc/kubernetes/cfg/kube-proxy.yaml
+NODE_ADDRESS=$(hostname)
+cat <<EOF >${CFG_DIR}/kube-proxy.yaml
 kind: KubeProxyConfiguration
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 bindAddress: 0.0.0.0
@@ -8,7 +8,7 @@ clientConnection:
   acceptContentTypes: ""
   burst: 0
   contentType: ""
-  kubeconfig: /etc/kubernetes/cfg/kube-proxy.kubeconfig
+  kubeconfig: ${CFG_DIR}/kube-proxy.kubeconfig
   qps: 0
 clusterCIDR: 10.244.0.0/16
 configSyncPeriod: 15m0s
@@ -32,7 +32,7 @@ ipvs:
   tcpTimeout: 0s
   udpTimeout: 0s  
 EOF
-export KUBE_PROXY_OPTS="--logtostderr=false --v=2 --log-dir=/etc/kubernetes/logs/kube-proxy --config=/etc/kubernetes/cfg/kube-proxy.yaml"
+export KUBE_PROXY_OPTS="--logtostderr=false --v=2 --log-dir=${LOG_DIR}/kube-proxy --config=${CFG_DIR}/kube-proxy.yaml"
 echo "KUBE_PROXY_OPTS=$KUBE_PROXY_OPTS">/etc/kubernetes/cfg/kube-proxy.conf
 
 cat <<EOF >/usr/lib/systemd/system/kube-proxy.service
@@ -41,7 +41,7 @@ Description=Kubernetes Proxy
 After=network.target
 
 [Service]
-EnvironmentFile=-/etc/kubernetes/cfg/kube-proxy.conf
+EnvironmentFile=-${CFG_DIR}/kube-proxy.conf
 ExecStart=/usr/sbin/kube-proxy \$KUBE_PROXY_OPTS
 Restart=on-failure
 

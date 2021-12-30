@@ -1,26 +1,36 @@
 #!/bin/bash
-MASTER_ADDRESS=$1
+# MASTER_ADDRESS=$1
 KUBE_CONTROLLER_MANAGER_OPTS="--logtostderr=false \
---v=2 \
---log-dir=/etc/kubernetes/logs/kube-controller-manager \
---master=https://${MASTER_ADDRESS}:6443 --leader-elect=true \
---secure-port=10257 --bind-address=127.0.0.1 --controllers=*,bootstrapsigner,tokencleaner \
---kubeconfig=/etc/kubernetes/cfg/kube-controller-manager.kubeconfig \
---service-cluster-ip-range=10.96.0.0/16 \
---cluster-name=kubernetes \
---cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem \
---cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem  \
---tls-cert-file=/etc/kubernetes/ssl/kube-controller-manager.pem \
---tls-private-key-file=/etc/kubernetes/ssl/kube-controller-manager-key.pem \
---use-service-account-credentials=true \
---service-account-private-key-file=/etc/kubernetes/ssl/ca-key.pem \
---cluster-signing-duration=87600h0m0s \
---feature-gates=RotateKubeletServerCertificate=true \
---allocate-node-cidrs=true \
---cluster-cidr=10.244.0.0/16 \
---root-ca-file=/etc/kubernetes/ssl/ca.pem"
+  --allocate-node-cidrs=true \
+  --authentication-kubeconfig=${CFG_DIR}/kube-controller-manager.kubeconfig \
+  --authorization-kubeconfig=${CFG_DIR}/kube-controller-manager.kubeconfig \
+  --v=2 \
+  --log-dir=${LOG_DIR}/kube-controller-manager \
+  --master=https://${MASTER_ADDRESS}:6443 --leader-elect=true \
+  --bind-address=127.0.0.1 \
+  --kubeconfig=${CFG_DIR}/kube-controller-manager.kubeconfig \
+  --controllers=*,bootstrapsigner,tokencleaner \
+  --cluster-name=kubernetes \
+  --cluster-signing-cert-file=${SSL_DIR}/ca.pem \
+  --cluster-signing-key-file=${SSL_DIR}/ca-key.pem  \
+  --cluster-cidr=10.244.0.0/16 \
+  --cluster-signing-duration=87600h0m0s \
+  --client-ca-file=${SSL_DIR}/ca.pem \
+  --tls-cert-file=${SSL_DIR}/kube-controller-manager.pem \
+  --tls-private-key-file=${SSL_DIR}/kube-controller-manager-key.pem \
+  --use-service-account-credentials=true \
+  --service-account-private-key-file=${SSL_DIR}/ca-key.pem \
+  --service-cluster-ip-range=10.96.0.0/16 \
+  --secure-port=10257 \
+  --feature-gates=RotateKubeletServerCertificate=true \
+  --requestheader-client-ca-file=${SSL_DIR}/ca.pem \
+  --requestheader-extra-headers-prefix=X-Remote-Extra- \
+  --requestheader-group-headers=X-Remote-Group \
+  --requestheader-username-headers=X-Remote-User \
+  --requestheader-allowed-names=front-proxy-clien \
+  --root-ca-file=${SSL_DIR}/ca.pem"
 
-echo "KUBE_CONTROLLER_MANAGER_OPTS=$KUBE_CONTROLLER_MANAGER_OPTS">/etc/kubernetes/cfg/kube-controller-manager.conf
+echo "KUBE_CONTROLLER_MANAGER_OPTS="$KUBE_CONTROLLER_MANAGER_OPTS"">${CFG_DIR}/kube-controller-manager.conf
 cat <<EOF >/usr/lib/systemd/system/kube-controller-manager.service
 [Unit]
 Description=Kubernetes Controller Manager
@@ -29,7 +39,7 @@ After=network.target network-online.target
 Wants=network-online.target
 
 [Service]
-EnvironmentFile=-/etc/kubernetes/cfg/kube-controller-manager.conf
+EnvironmentFile=-${CFG_DIR}/kube-controller-manager.conf
 ExecStart=/usr/sbin/kube-controller-manager $KUBE_CONTROLLER_MANAGER_OPTS
 Restart=on-failure
 

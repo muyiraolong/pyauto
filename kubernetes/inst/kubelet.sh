@@ -1,8 +1,10 @@
 #!/bin/bash
-NODE_ADDRESS=$1
-
+NODE_ADDRESS=$(hostname)
+if ! [ -d /etc/kubernetes/manifests ]; then
+   mkdir /etc/kubernetes/manifests
+fi
 #kubeadm config print init-defaults --component-configs KubeletConfiguration >kubelet.yml generate kubelet.yml
-cat <<EOF >/etc/kubernetes/cfg/kubelet.yaml
+cat <<EOF >${CFG_DIR}/kubelet.yaml
 kind: KubeletConfiguration
 apiVersion: kubelet.config.k8s.io/v1beta1
 address: 0.0.0.0
@@ -18,8 +20,8 @@ healthzBindAddress: 127.0.0.1
 healthzPort: 10248
 failSwapOn: false
 # 身份验证
-tlsCertFile: /etc/kubernetes/ssl/kubelet.pem
-tlsPrivateKeyFile: /etc/kubernetes/ssl/kubelet-key.pem
+tlsCertFile: ${SSL_DIR}/kubelet.pem
+tlsPrivateKeyFile: ${SSL_DIR}/kubelet-key.pem
 authentication:
   anonymous:
     enabled: false
@@ -27,18 +29,26 @@ authentication:
     cacheTTL: 2m0s
     enabled: true
   x509:
-    clientCAFile: /etc/kubernetes/ssl/ca.pem
+    clientCAFile: ${SSL_DIR}/ca.pem
 # 授权
 authorization:
   mode: Webhook
   webhook:
     cacheAuthorizedTTL: 5m0s
     cacheUnauthorizedTTL: 30s
+enforceNodeAllocatable:
+- pods
+kubeReserved:
+  cpu: 500m
+  memory: 1Gi
+  ephemeral-storage: 1Gi 
+systemReserved:
+  memory: 1Gi
 evictionHard:
-  imagefs.available: 15%
-  memory.available: 100Mi
-  nodefs.available: 10%
-  nodefs.inodesFree: 5%
+  imagefs.available: "15%"
+  memory.available: "300Mi"
+  nodefs.available: "10%"
+  nodefs.inodesFree: "5%"
 rotateCertificates: true
 maxOpenFiles: 1000000
 maxPods: 110
@@ -60,15 +70,23 @@ memorySwap: {}
 nodeStatusReportFrequency: 0s
 nodeStatusUpdateFrequency: 0s
 EOF
+if ! [ -d /workdata/kubelet/${NODE_ADDRESS} ] ;then
+	mkdir /workdata/kubelet/${NODE_ADDRESS} -p
+else
+    echo "delete the old kubelet root file"
+	rm -rf /workdata/kubelet/${NODE_ADDRESS}
+	mkdir /workdata/kubelet/${NODE_ADDRESS} -p
+fi
 
-KUBELET_OPTS="--kubeconfig=/etc/kubernetes/cfg/kubelet.kubeconfig \
+KUBELET_OPTS="--kubeconfig=${CFG_DIR}/kubelet.kubeconfig \
    --runtime-cgroups=/systemd/system.slice \
-   --config=/etc/kubernetes/cfg/kubelet.yaml \
+   --config=${CFG_DIR}/kubelet.yaml \
    --pod-infra-container-image=registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.2 \
    --logtostderr=false \
    --v=2 \
-   --log-dir=/etc/kubernetes/logs/kubelet"
-echo "KUBELET_OPTS=$KUBELET_OPTS">/etc/kubernetes/cfg/kubelet.conf
+   --log-dir=${LOG_DIR}/kubelet \
+   --root-dir=/workdata/kubelet/${NODE_ADDRESS}"
+echo "KUBELET_OPTS=$KUBELET_OPTS">${CFG_DIR}/kubelet.conf
 
 cat <<EOF >/usr/lib/systemd/system/kubelet.service
 [Unit]
@@ -77,7 +95,7 @@ After=docker.service
 Requires=docker.service
 
 [Service]
-EnvironmentFile=-/etc/kubernetes/cfg/kubelet.conf
+EnvironmentFile=-${CFG_DIR}/kubelet.conf
 ExecStart=/usr/sbin/kubelet \$KUBELET_OPTS 
 Restart=on-failure
 KillMode=process

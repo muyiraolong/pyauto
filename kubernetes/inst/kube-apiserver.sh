@@ -1,48 +1,50 @@
 #!/bin/bash
-MASTER_ADDRESS=$1
-ETCD_SERVERS="https://win70.inno.com:2379,https://win71.inno.com:2379,https://win72.inno.com:2379"
-KUBE_APISERVER_OPTS="--logtostderr=false \
-    --v=2 --log-dir=/etc/kubernetes/logs/kube-apiserver \
-    --etcd-servers=${ETCD_SERVERS} \
-    --etcd-cafile=/etc/etcd/ssl/ca.pem \
-    --etcd-certfile=/etc/etcd/ssl/client.pem \
-    --etcd-keyfile=/etc/etcd/ssl/client-key.pem \
-	  --bind-address=0.0.0.0 \
-    --secure-port=6443 \
+# MASTER_ADDRESS=$1
+# ETCD_SERVERS="${MASTER_ADDRESS}:2379"
+KUBE_APISERVER_OPTS="\"--logtostderr=false \
     --advertise-address=${MASTER_ADDRESS} \
-    --allow-privileged=true \
-    --service-cluster-ip-range=10.96.0.0/16 \
-    --enable-aggregator-routing=true \
-    --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,NodeRestriction \
-    --authorization-mode=RBAC,Node \
-    --service-node-port-range=30000-50000  \
-    --kubelet-client-certificate=/etc/kubernetes/ssl/client.pem \
-    --kubelet-client-key=/etc/kubernetes/ssl/client-key.pem \
-    --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem  \
-    --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem \
-    --client-ca-file=/etc/kubernetes/ssl/ca.pem \
-    --service-account-key-file=/etc/kubernetes/ssl/ca-key.pem \
-    --service-account-signing-key-file=/etc/kubernetes/ssl/ca-key.pem \
-    --service-account-issuer=https://kubernetes.default.svc.cluster.local \
-    --requestheader-client-ca-file=/etc/kubernetes/ssl/ca.pem \
-    --requestheader-extra-headers-prefix=X-Remote-Extra- \
-    --requestheader-group-headers=X-Remote-Group \
-    --requestheader-username-headers=X-Remote-User \
-    --runtime-config=api/all=true \
-	  --requestheader-allowed-names=''\
-	  --proxy-client-key-file=/etc/kubernetes/ssl/proxy-client-key.pem \
-	  --proxy-client-cert-file=/etc/kubernetes/ssl/proxy-client.pem \
+	--authorization-mode=RBAC,Node \
     --audit-log-maxage=30 \
     --audit-log-maxbackup=3  \
     --audit-log-maxsize=100 \
     --audit-log-truncate-enabled=true  \
-    --audit-log-path=/etc/kubernetes/logs/k8s-audit.log \
-    --audit-policy-file=/etc/kubernetes/cfg/audit-policy.yaml \
-	  --feature-gates=RemoveSelfLink=false \
-    --anonymous-auth=false"
-echo "KUBE_APISERVER_OPTS=$KUBE_APISERVER_OPTS">/etc/kubernetes/cfg/kube-apiserver.conf
+    --audit-log-path=${LOG_DIR}/k8s-audit.log \
+    --audit-policy-file=${CFG_DIR}/audit-policy.yaml \
+    --allow-privileged=true \
+	--anonymous-auth=false \
+	--bind-address=0.0.0.0 \
+    --client-ca-file=${SSL_DIR}/ca.pem \
+    --enable-aggregator-routing=true \
+	--enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,NodeRestriction \
+    --etcd-servers=${ETCD_SERVERS} \
+    --etcd-cafile=${SSL_DIR}/ca.pem \
+    --etcd-certfile=${SSL_DIR}/apiserver-etcd-client.pem \
+    --etcd-keyfile=${SSL_DIR}/apiserver-etcd-client-key.pem \
+    --kubelet-client-certificate=${SSL_DIR}/apiserver-kubelet-client.pem \
+    --kubelet-client-key=${SSL_DIR}/apiserver-kubelet-client-key.pem \
+    --tls-cert-file=${SSL_DIR}/kube-apiserver.pem  \
+    --tls-private-key-file=${SSL_DIR}/kube-apiserver-key.pem \
+	--service-cluster-ip-range=10.96.0.0/16 \
+    --secure-port=6443 \
+	--service-node-port-range=30000-50000  \
+    --service-account-key-file=${SSL_DIR}/ca-key.pem \
+    --service-account-signing-key-file=${SSL_DIR}/ca-key.pem \
+    --service-account-issuer=https://kubernetes.default.svc.cluster.local \
+    --requestheader-client-ca-file=${SSL_DIR}/ca.pem \
+    --requestheader-extra-headers-prefix=X-Remote-Extra- \
+    --requestheader-group-headers=X-Remote-Group \
+    --requestheader-username-headers=X-Remote-User \
+	--requestheader-allowed-names=front-proxy-clien \
+    --runtime-config=api/all=true \
+	--proxy-client-key-file=${SSL_DIR}/front-proxy-client-key.pem \
+	--proxy-client-cert-file=${SSL_DIR}/front-proxy-client.pem \
+	--feature-gates=RemoveSelfLink=false \
+	--log-dir=${LOG_DIR}/kube-apiserver \
+	--v=2\""
+
+echo "KUBE_APISERVER_OPTS=$KUBE_APISERVER_OPTS">${CFG_DIR}/kube-apiserver.conf
 export KUBE_APISERVER_OPTS
-cat  <<EOF >/etc/kubernetes/cfg/audit-policy.yaml
+cat  <<EOF >${CFG_DIR}/audit-policy.yaml
 apiVersion: audit.k8s.io/v1 # This is required.
 kind: Policy
 # Don't generate audit events for all requests in RequestReceived stage.

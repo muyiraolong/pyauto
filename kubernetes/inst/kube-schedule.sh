@@ -1,11 +1,11 @@
 #!/bin/bash
-MASTER_ADDRESS=$1
-KUBE_SCHEDULER_OPTS="--kubeconfig=/etc/kubernetes/cfg/kube-scheduler.kubeconfig --address=127.0.0.1  --cert-dir=/etc/kubernetes/ssl --leader-elect=true \
+# MASTER_ADDRESS=$1
+KUBE_SCHEDULER_OPTS="--kubeconfig=${CFG_DIR}/kube-scheduler.kubeconfig --address=127.0.0.1  --cert-dir=${SSL_DIR} --leader-elect=true \
  --logtostderr=false \
  --v=2  \
- --log-dir=/etc/kubernetes/logs/kube-scheduler"
+ --log-dir=${LOG_DIR}/kube-scheduler"
 
-echo "KUBE_SCHEDULER_OPTS=$KUBE_SCHEDULER_OPTS">/etc/kubernetes/cfg/kube-scheduler.conf
+echo "KUBE_SCHEDULER_OPTS=$KUBE_SCHEDULER_OPTS">${CFG_DIR}/kube-scheduler.conf
 cat <<EOF >/usr/lib/systemd/system/kube-scheduler.service
 [Unit]
 Description=Kubernetes Scheduler
@@ -13,8 +13,8 @@ Documentation=https://github.com/kubernetes/kubernetes
 After=network.target network-online.target
 Wants=network-online.target
 [Service]
-EnvironmentFile=-/etc/kubernetes/cfg/kube-scheduler.conf
-ExecStart=/etc/kubernetes/bin/kube-scheduler \$KUBE_SCHEDULER_OPTS
+EnvironmentFile=-${CFG_DIR}/kube-scheduler.conf
+ExecStart=/usr/sbin/kube-scheduler \$KUBE_SCHEDULER_OPTS
 Restart=on-failure
 [Install]
 WantedBy=multi-user.target
