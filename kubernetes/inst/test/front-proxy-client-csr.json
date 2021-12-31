@@ -1,0 +1,16 @@
+{
+    "CN": "front-proxy-client",
+    "key": {
+        "algo": "ecdsa",
+        "size": 256
+    },
+    "names": [
+        {
+            "C": "CN",
+            "L": "Henan",
+            "ST": "nanyang",
+            "O": "system:masters",
+            "OU": "System"
+        }
+    ]
+}

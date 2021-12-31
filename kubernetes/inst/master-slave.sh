@@ -8,13 +8,25 @@
 ##########################################################
 # echo "export NODE_IPS=(10.10.10.70 10.10.10.71 10.10.10.72 10.10.10.73)" >> ~/.bash_profile
 echo "export NODE_IPS=(10.10.10.70 10.10.10.71 10.10.10.72)" >> ~/.bash_profile
+echo "export MASTER_IPS=(10.10.10.70 10.10.10.71)" >> ~/.bash_profile
 echo "export MASTERIP=10.10.10.70">> ~/.bash_profile
-echo "export BACKUPIP=10.10.10.70">> ~/.bash_profile
-NODE_NAMES_DOMAIN=("win70.inno.com" "win71.inno.com" "win72.inno.com" "win73.inno.com")
-NODE_NAMES=("win70" "win71" "win72" "win73")
+echo "export BACKUPIP=10.10.10.71">> ~/.bash_profile
+MASTERIP=10.10.10.70
+BACKUPIP=10.10.10.71
+MASTER_IPS=(10.10.10.70 10.10.10.71)
 
-echo "export NODE_NAMES_DOMAIN=("win70.inno.com" "win71.inno.com" "win72.inno.com" "win73.inno.com")">> ~/.bash_profile
-echo "export NODE_NAMES=("win70" "win71" "win72" "win73")">> ~/.bash_profile
+NODE_NAMES_DOMAIN=("win70.inno.com" "win71.inno.com" "win72.inno.com")
+NODE_NAMES=("win70" "win71" "win72")
+export MASTERNODE="win70.inno.com"
+export BACKUPNODE="win71.inno.com"
+echo "export MASTERNODE=win70.inno.com">> ~/.bash_profile
+echo "export BACKUPNODE=win71.inno.com">> ~/.bash_profile
+# NODE_NAMES_DOMAIN=("win70.inno.com" "win71.inno.com" "win72.inno.com" "win73.inno.com")
+# NODE_NAMES=("win70" "win71" "win72" "win73")
+# echo "export NODE_NAMES_DOMAIN=("win70.inno.com" "win71.inno.com" "win72.inno.com" "win73.inno.com")">> ~/.bash_profile
+# echo "export NODE_NAMES=("win70" "win71" "win72" "win73")">> ~/.bash_profile
+echo "export NODE_NAMES_DOMAIN=("win70.inno.com" "win71.inno.com" "win72.inno.com")">> ~/.bash_profile
+echo "export NODE_NAMES=("win70" "win71" "win72")">> ~/.bash_profile
 
 
 ##########################################################
