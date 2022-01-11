@@ -30,7 +30,7 @@ usage() {
 
 runas_root() {
     if [[ ! "root" == "$(id | cut -f 2 -d '(' | cut -f1 -d ')')" ]]; then
-        "$(${RUNDIR}/bopath)"/boexec ${RUNDIR}/${prog} "${@}"
+        "$(${RUNDIR})" ${RUNDIR}/${prog} "${@}"
         exit
     fi
 }
@@ -63,7 +63,7 @@ mount_share() {
 }
 umount_share() { # $1->mount_export_name
     if [[ "${1}" == "" ]]; then
-        MNT_FOLDER="/sap_automation"
+        MNT_FOLDER="/workdata"
     else
         MNT_FOLDER="${1}"
     fi
@@ -74,11 +74,11 @@ umount_share() { # $1->mount_export_name
 }
 check_software_share() {
     if [[ ! -f /software/AIX/PROD_VERSION.TXT ]]; then
-        if ! ${RUNDIR}/run_timeout 30 "mount /software" > /dev/null 2>&1; then
+        if ! ${RUNDIR}/run_timeout 30 "mount /workdata" > /dev/null 2>&1; then
             /usr/bin/sendmail.py -t ${AUTOMAIL} -s "${prog}: No /software share available!"
             return 1
         else
-            log_info "Mounted /software"
+            log_info "Mounted /workdata"
         fi
     fi
 
