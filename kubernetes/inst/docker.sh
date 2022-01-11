@@ -1,23 +1,97 @@
-# rpm -e podman-1.0.0-2.git921f98f.module+el8+2785+ff8a053f.x86_64
-# rpm -e buildah-1.5-3.gite94b4f9.module+el8+2769+577ad176.x86_64
-# rpm -e fuse-overlayfs
-# rpm -e slirp4netns
-# rpm -e pcp-testsuite-4.3.0-3.el8.x86_64
-# rpm -e pcp-pmda-docker-4.3.0-3.el8.x86_64
-# rpm -ivh /mnt/hgfs/0_package/Docker/package/first/fuse-overlayfs-0.7.8-1.module_el8.3.0+479+69e2ae26.x86_64.rpm
-# rpm -ivh /mnt/hgfs/0_package/Docker/package/first/slirp4netns-0.4.2-3.git21fdece.module_el8.3.0+479+69e2ae26.x86_64.rpm
-# rpm -Uvh /mnt/hgfs/kubernetes/0_package/Docker/package/second/*
-# rpm -Uvh /mnt/hgfs/kubernetes/0_package/Docker/package/libseccomp-devel/libseccomp-2.5.1-1.el8.x86_64.rpm
-# rpm -ivh /mnt/hgfs/kubernetes/D0_package/Docker/package/libseccomp-devel/libseccomp-devel-2.5.1-1.el8.x86_64.rpm
+#!/bin/bash
+#=============================================================================
+# HEADER
+#=============================================================================
+#% SYNOPSIS
+#%    ${prog}
+#%
+#% DESCRIPTION
+#%    Script to deploy Docker service
+#%
+#% ARGUMENTS
+#%    NONE
+#%
+#% EXAMPLES
+#%    ${prog}
+#%
+#=============================================================================
+#  HISTORY
+#     20220104  innod motingxia@163.com
+#=============================================================================
+#  NOTES
+#=============================================================================
+# END_OF_HEADER
+#=============================================================================
 
-# systemctl start docker && systemctl enable docker && 
+#=============================================================================
+#  IMPORT COMMON FUNCTIONS AND VARIABLES
+#=============================================================================
+RUNDIR="$(cd "$(dirname "${0}")" && pwd)"
+if [ -z "${FUNCTIONS_IMPORTED}" ]; then
+  . ${RUNDIR}/functions.ksh
+fi
+
+#=============================================================================
+#  FUNCTIONS
+#=============================================================================
+if [ $# -gt 0 ]; then
+  usage
+  exit 8
+fi
+i=1
+scriptname=$(basename $0)
+if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
+  touch ${LOG_FILE_DIR}/${scriptname}.log
+  LogFile=${LOG_FILE_DIR}/${scriptname}.log
+else
+  rm -rf ${LOG_FILE_DIR}/${scriptname}.log
+  touch ${LOG_FILE_DIR}/${scriptname}.log
+  LogFile=${LOG_FILE_DIR}/${scriptname}.log
+fi
+export LogFile=${LOG_FILE_DIR}/${scriptname}.log
+echo ${LogFile}
+
+source ~/.bash_profile
+
+#rpm -e podman-1.0.0-2.git921f98f.module+el8+2785+ff8a053f.x86_64 --force
+#rpm -e podman-1.0.0-2.git921f98f.module+el8+2785+ff8a053f.x86_64
+#rpm -e buildah-1.5-3.gite94b4f9.module+el8+2769+577ad176.x86_64 --force
+#rpm -e buildah-1.5-3.gite94b4f9.module+el8+2769+577ad176.x86_64
+#rpm -e fuse-overlayfs --force
+#rpm -e slirp4netns --force
+#rpm -e pcp-testsuite-4.3.0-3.el8.x86_64 --force
+#rpm -e pcp-pmda-docker-4.3.0-3.el8.x86_64 --force
+#rpm -ivh /mnt/hgfs/kubernetes/0_package/Docker/package/first/fuse-overlayfs-0.7.8-1.module_el8.3.0+479+69e2ae26.x86_64.rpm
+#rpm -ivh /mnt/hgfs/kubernetes/0_package/Docker/package/first/slirp4netns-0.4.2-3.git21fdece.module_el8.3.0+479+69e2ae26.x86_64.rpm
+#rpm -Uvh /mnt/hgfs/kubernetes/0_package/Docker/package/second/*
+#rpm -Uvh /mnt/hgfs/kubernetes/0_package/Docker/package/third/libseccomp-2.5.1-1.el8.x86_64.rpm
+#rpm -ivh /mnt/hgfs/kubernetes/0_package/Docker/package/third/libseccomp-devel-2.5.1-1.el8.x86_64.rpm
+
+# systemctl start docker && systemctl enable docker &&
+{
 systemctl stop docker
+
+pids=$(ps -ef | grep -v grep | grep -i docker| awk '{printf("%s ",$2)}')
+if [[ -n "${pids}" ]]; then
+    log_info "  Docker is running!"
+    systemctl stop docker
+    if [ $? -eq 0 ];then
+      log_info "  Docker is stopped!"
+    fi
+fi
+
+if [ -d /var/lib/docker ];then
+    rm -rf /var/lib/dockershim/*
+    rm -rf /var/lib/docker/*
+    rm -rf /var/lib/kubelet/*
+    log_info "  /var/lib/{dockershim,docker,kubelet} are deleted"
+fi
 
 cat <<EOF >/etc/docker/daemon.json
 {
     "registry-mirrors": ["https://registry.docker-cn.com"],
     "exec-opts": ["native.cgroupdriver=systemd"],
-    "insecure-registries": ["10.10.10.72:5000"],
+    "insecure-registries": ["win200:5000"],
     "log-driver": "json-file",
     "log-opts": {"max-size": "100m"}
 }
@@ -75,4 +149,14 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload;systemctl start docker
-docker info
+if [ $? -eq 0 ]; then
+  log_info  "  Docker is running successfully! "
+else
+  log_error "  Start docker,pls check in log file /var/log/message"
+  log_info  "  tail -f /var/log/message"
+fi
+} 2>&1 | tee -a $LogFile
+
+log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
+log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
+exit 0

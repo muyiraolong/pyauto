@@ -59,7 +59,6 @@ else
 fi
 EOF
 
-
 #haproxy.cfg配置文件
 cat <<EOF >/etc/haproxy/haproxy.cfg
 global

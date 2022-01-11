@@ -1,6 +1,64 @@
 #!/bin/bash
+#=============================================================================
+# HEADER
+#=============================================================================
+#% SYNOPSIS
+#%    ${prog}
+#%
+#% DESCRIPTION
+#%    Script to deploy kube-apiservice service
+#%
+#% ARGUMENTS
+#%    NONE
+#%
+#% EXAMPLES
+#%    ${prog}
+#%
+#=============================================================================
+#  HISTORY
+#     20220104  innod motingxia@163.com
+#=============================================================================
+#  NOTES
+#=============================================================================
+# END_OF_HEADER
+#=============================================================================
+
+#=============================================================================
+#  IMPORT COMMON FUNCTIONS AND VARIABLES
+#=============================================================================
+RUNDIR="$(cd "$(dirname "${0}")" && pwd)"
+if [ -z "${FUNCTIONS_IMPORTED}" ]; then
+  . ${RUNDIR}/functions.ksh
+fi
+
+#=============================================================================
+#  FUNCTIONS
+#=============================================================================
+#=============================================================================
+#  FUNCTIONS
+#=============================================================================
+if [ $# -gt 0 ]; then
+  usage
+  exit 8
+fi
+i=1
+scriptname=$(basename $0)
+if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
+  touch ${LOG_FILE_DIR}/${scriptname}.log
+  LogFile=${LOG_FILE_DIR}/${scriptname}.log
+else
+  rm -rf ${LOG_FILE_DIR}/${scriptname}.log
+  touch ${LOG_FILE_DIR}/${scriptname}.log
+  LogFile=${LOG_FILE_DIR}/${scriptname}.log
+fi
+export LogFile=${LOG_FILE_DIR}/${scriptname}.log
+echo ${LogFile}
+
+source ~/.bash_profile
+{
 # MASTER_ADDRESS=$1
 # ETCD_SERVERS="${MASTER_ADDRESS}:2379"
+log_info "  Start generate ${CFG_DIR}/kube-apiserver.conf"
 KUBE_APISERVER_OPTS="\"--logtostderr=false \
     --advertise-address=${MASTER_ADDRESS} \
 	--authorization-mode=RBAC,Node \
@@ -43,7 +101,11 @@ KUBE_APISERVER_OPTS="\"--logtostderr=false \
 	--v=2\""
 
 echo "KUBE_APISERVER_OPTS=$KUBE_APISERVER_OPTS">${CFG_DIR}/kube-apiserver.conf
+log_info "  Generate ${CFG_DIR}/kube-apiserver.conf done!"
+
 export KUBE_APISERVER_OPTS
+
+log_info "  Start generate  ${CFG_DIR}/audit-policy.yaml"
 cat  <<EOF >${CFG_DIR}/audit-policy.yaml
 apiVersion: audit.k8s.io/v1 # This is required.
 kind: Policy
@@ -115,7 +177,9 @@ rules:
       - "RequestReceived"
 # refer to https://kubernetes.io/docs/tasks/debug-application-cluster/audit/
 EOF
+log_info "  Generate ${CFG_DIR}/audit-policy.yaml done"
 
+log_info "  Start generate /usr/lib/systemd/system/kube-apiserver.service"
 cat <<EOF >/usr/lib/systemd/system/kube-apiserver.service
 [Unit]
 Documentation=https://github.com/kubernetes/kubernetes
@@ -130,8 +194,20 @@ ExecStart=/usr/sbin/kube-apiserver \$KUBE_APISERVER_OPTS
 [Install]
 WantedBy=multi-user.target
 EOF
+log_info "  Generate /usr/lib/systemd/system/kube-apiserver.service"
+log_info "  Try to start kube-apiserver.service"
 systemctl daemon-reload && systemctl enable kube-apiserver && systemctl restart kube-apiserver
+if [ $? -eq 0 ]; then
+  log_info "  kube-apiserver is running successfully!"
+else
+  log_info "  Start kube-apiserver failed,pls check in log file /var/log/message"
+  log_info "  tail -f /var/log/message"
+fi
+} 2>&1 | tee -a $LogFile
 
+log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
+log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
+exit 0
 #--authorization-mode=Node,RBAC： 开启 Node 和 RBAC 授权模式，拒绝未授权的请求；
 #--enable-admission-plugins：启用 ServiceAccount 和 NodeRestriction；
 #--service-account-key-file：签名 ServiceAccount Token 的公钥文件，kube-controller-manager 的 --service-account-private-key-file 指定私钥文件，两者配对使用；

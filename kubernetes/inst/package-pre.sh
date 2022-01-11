@@ -1,17 +1,20 @@
 #!/bin/bash
-yum -y install ipvsadm.x86_64 conntrack-tools 
-cat <<EOF >ipvs.sh
+yum -y install ipset ipvsadm.x86_64 conntrack-tools
+# enable ipvs
+cat <<EOF >/etc/sysconfig/modules/ipvs.sh
 modprobe -- ip_vs
 modprobe -- ip_vs_sh
 modprobe -- ip_vs_rr
 modprobe -- ip_vs_wrr
 modprobe -- nf_conntrack_ipv4
 EOF
-chmod +x ipvs.sh
-bash ipvs.sh
-lsmod |grep ip_vs
+chmod +x /etc/sysconfig/modules/ipvs.sh
+bash /etc/sysconfig/modules/ipvs.sh
+lsmod |grep -e ip_vs -e nf_conntrack_ipv4
+
 echo "ipvs.sh" >>/etc/rc.local
 chmod +x /etc/rc.local
+
 cat <<EOF >/etc/sysctl.d/k8s.conf
 #sysctls for k8s node config
 kernel.softlockup_all_cpu_backtrace=1
@@ -39,13 +42,23 @@ net.bridge.bridge-nf-call-ip6tables=1
 net.ipv6.conf.all.disable_ipv6=1
 net.netfilter.nf_conntrack_max=2310720
 EOF
+
+timedatectl set-timezone Asia/Shanghai
+timedatectl set-local-rtc 0
+systemctl restart rsyslog
+systemctl restart crond
+
 sysctl -p /etc/sysctl.d/k8s.conf
 #关闭swap
 swapoff -a && sed -i '/swap/s/^/#/' /etc/fstab
 #关闭selinux
 setenforce 0 && sed -i 's/=enforcing/=disabled/g' /etc/selinux/config
 
-yum install ipset ipvsadm -y
+#关闭numa
+sed -i 's/quiet/quiet numa=off/g' /etc/default/grub
+grub2-mkconfig -o /etc/grub2.cfg
+#reboot
+
 #设置 rsyslogd 和 systemd journald
 mkdir /var/log/journa
 mkdir -p  /etc/systemd/journald.conf.d/

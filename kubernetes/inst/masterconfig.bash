@@ -58,8 +58,6 @@ else
 fi
 EOF
 
-
-
 #haproxy.cfg配置文件
 cat <<EOF >/etc/haproxy/haproxy.cfg
 global
@@ -85,12 +83,18 @@ frontend monitor-in
  monitor-uri /monitor
 
 frontend k8s-master
- bind 0.0.0.0:16443
- bind 127.0.0.1:16443
+#bind 0.0.0.0:16443
+#bind 127.0.0.1:16443
+ bind *:6443
  mode tcp
+ timeout client 1h
+ log global
  option tcplog
- tcp-request inspect-delay 5s
  default_backend k8s-master
+ tcp-request inspect-delay 5s
+ acl is_websocket hdr(Upgrade) -i WebSocket
+ acl is_websocket hdr_beg(Host) -i ws
+
 
 backend k8s-master
  mode tcp
