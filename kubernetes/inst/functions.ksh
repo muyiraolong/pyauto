@@ -43,28 +43,8 @@ exec_counter() {
 # MOUNT Share
 #================================================================
 mount_share() {
-    MNT_FOLDER="/sap_automation"
-    SL=$(/opt/bosap/toolset/bin/get_fact network.sl)
-    case $SL in
-    SL4|SL3 )
-      MNT_EXPORT="fe00fa33.de.bosch.com:/vol/fe00fa33_vol01/sap_automation"
-      if [ "$(hostname | cut -c 5)" = "g" ]; then
-        MNT_EXPORT="sgp0fa01.apac.bosch.com:/vol/sgp0fa01_vol02/sap_automation_sgp"
-      fi
-      ;;
-    SL2 )
-      MNT_EXPORT="fe0sfx01.rbesz01.com:/vol/fe0sfx01_vol06/sap_automation_sl2"
-      ;;
-    SL1 )
-      log_info "Host in SL1, no mount possible, local /software is used"
-      exit 1
-      ;;
-    * )
-      log_error "no mount for network layer \"${SL}\" possible, trying /software"
-      MNT_EXPORT=""
-      MNT_FOLDER="/software"
-      ;;
-    esac
+    MNT_FOLDER="/workdata"
+
     if [ ! -d ${MNT_FOLDER} ]; then
         mkdir -p ${MNT_FOLDER}
     fi
@@ -74,7 +54,7 @@ mount_share() {
           return 1
         elif ! ${RUNDIR}/run_timeout 30 "mount -o vers=4 ${MNT_EXPORT} ${MNT_FOLDER}" > /dev/null 2>&1; then
           log_error "No mount of ${MNT_EXPORT} possible"
-          /opt/bosap/toolset/bin/sendmail.py -t ${AUTOMAIL} -s "${prog}: No mount of ${MNT_EXPORT} possible"
+          /usr/bin/sendmail.py -t ${AUTOMAIL} -s "${prog}: No mount of ${MNT_EXPORT} possible"
           return 8
         else
           log_info "${MNT_EXPORT} mounted on ${MNT_FOLDER}"
@@ -95,7 +75,7 @@ umount_share() { # $1->mount_export_name
 check_software_share() {
     if [[ ! -f /software/AIX/PROD_VERSION.TXT ]]; then
         if ! ${RUNDIR}/run_timeout 30 "mount /software" > /dev/null 2>&1; then
-            /opt/bosap/toolset/bin/sendmail.py -t ${AUTOMAIL} -s "${prog}: No /software share available!"
+            /usr/bin/sendmail.py -t ${AUTOMAIL} -s "${prog}: No /software share available!"
             return 1
         else
             log_info "Mounted /software"
