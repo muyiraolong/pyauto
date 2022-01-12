@@ -37,11 +37,21 @@ fi
 #=============================================================================
 #  FUNCTIONS
 #=============================================================================
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/R
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
 fi
-i=1
+RC=0
+
+. ${RUNDIR}/master-slave.sh
+
+starttime=$(date +%s)
 scriptname=$(basename $0)
 if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
   touch ${LOG_FILE_DIR}/${scriptname}.log
@@ -54,11 +64,14 @@ fi
 export LogFile=${LOG_FILE_DIR}/${scriptname}.log
 echo ${LogFile}
 
-source ~/.bash_profile
 # APISERVER=10.10.10.72
 # SSL_DIR=/etc/kubernetes/ssl
-
 # export KUBE_APISERVER="https://${APISERVER}:6443"
+
+if ! [ -f ${SSL_DIR} ];then
+   mkdir ${SSL_DIR}
+fi
+
 {
 log_info "  Generate ${CFG_DIR}/admin.kubeconfig for admin"
 ######################################create for admin ###################################################################################
@@ -146,11 +159,18 @@ kubectl config use-context default --kubeconfig=${CFG_DIR}/flanneld.kubeconfig
 log_info "  Generate ${CFG_DIR}/flanneld.kubeconfig for Flanneld done"
 } 2>&1 | tee -a $LogFile
 
-log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
-log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
-exit 0
-#following need change
-#for i in 70 71;do scp -p ${CFG_DIR}/*kubeconfig win$i:${CFG_DIR}/ ;done
-#for i in 70 71 72;do scp -p ${CFG_DIR}/{kubelet.kubeconfig,kube-proxy.kubeconfig} win$i:${CFG_DIR}/;done
-#for i in 70 71 72;do scp -p /root/.kube/config win$i:/root/.kube/config;done
-#for i in 70 71 72;do ssh win$i"chmod g-r ~/.kube/config;chmod o-r ~/.kube/config"; done
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+if [ "$RC" == "0" ]; then
+  log_info  "  OK: EndofScript ${scriptname} "     | tee -a $LogFile
+else
+  log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
+fi
+ende=$(date +%s)
+diff=$((ende - starttime))
+log_info  "  $(date)   Runtime      :   $diff"     | tee -a $LogFile
+log_info  "  Save log to ${LogFile}             "  | tee -a $LogFile
+logrename  ${LogFile}
+exit ${RC}

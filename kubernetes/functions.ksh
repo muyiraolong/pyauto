@@ -89,8 +89,9 @@ check_software_share() {
 # UTILITIES
 #================================================================
 is_reachable() { # $1->host
-    if [[ -f /usr/bin/netcat ]]; then
-        /usr/bin/netcat -z -w 1 "${1}" 22 > /dev/null 2>&1
+    if [[ -f /usr/bin/ncat ]]; then
+#         /usr/bin/netcat -z -w 1 "${1}" 22 > /dev/null 2>&1
+         /usr/bin/ncat -z -w 1 "${1}" 22 > /dev/null 2>&1
     else
         ${RUNDIR}/check_port.py "${1}" 22  > /dev/null 2>&1
     fi
@@ -274,7 +275,7 @@ logrename ()
 filecreatedate=`date +%Y%m%d%H%M%S`
  if [ -f $1 ] ;then
    mv $1 $1${filecreatedate}
-   log_info "$1 change to $1${filecreatedate} "
+   log_info "  $1 move to $1${filecreatedate} "
  else
    log_error " $1 not exist "
    exit 16

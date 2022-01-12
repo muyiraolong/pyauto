@@ -146,7 +146,7 @@ gencert()
       log_info "=====  Generate $1 certification $3  in ${SSL_DIR}/${targetcert}    ====="
   else
       log_error "ERROR!!!!!!!!"
-      exit 8
+      do_exit 8
   fi
   sleep 2
   echo -e "\n"
@@ -156,22 +156,32 @@ gencert()
 #######################################################################################################################
 ## MAIN
 #######################################################################################################################
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/RC.$$
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
 fi
 i=1
+
+RC=0
+starttime=$(date +%s)
 scriptname=$(basename $0)
-if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
-  touch ${LOG_FILE_DIR}/${scriptname}.log
-  LogFile=${LOG_FILE_DIR}/${scriptname}.log
+if ! [ -f ${LOG_FILE_DIR}/${APPNAME}${scriptname}.log  ];then
+  touch ${LOG_FILE_DIR}/${APPNAME}${scriptname}.log
+  LogFile=${LOG_FILE_DIR}/${APPNAME}${scriptname}.log
 else
-  rm -rf ${LOG_FILE_DIR}/${scriptname}.log
-  touch ${LOG_FILE_DIR}/${scriptname}.log
-  LogFile=${LOG_FILE_DIR}/${scriptname}.log
+  rm -rf ${LOG_FILE_DIR}/${APPNAME}${scriptname}.log
+  touch ${LOG_FILE_DIR}/${APPNAME}${scriptname}.log
+  LogFile=${LOG_FILE_DIR}/${APPNAME}${scriptname}.log
 fi
-export LogFile=${LOG_FILE_DIR}/${scriptname}.log
-echo ${LogFile}
+LogFile=${LOG_FILE_DIR}/${APPNAME}${scriptname}.log
+
+log_info  "logfile: ${LogFile}"
 prepareca
 
 log_info  "================== $i =================" | tee -a ${LogFile}
@@ -182,7 +192,7 @@ if [ $? -eq 0 ] ; then
     log_info  "===== Generate  ca.pem and ca-key.pem certification done and put in ${SSL_DIR}   =====" | tee -a ${LogFile}
 else
     log_error "ERROR!!!!!!!!" | tee -a ${LogFile}
-    exit
+    do_exit 8
 fi
 sleep 2
 
@@ -241,6 +251,7 @@ gencert server kubelet-csr.json kubelet
 sed -e "s:clusteradmin:system\:flanneld:g" template-csr.json                > ${JSON_DIR}/flanneld-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client flanneld-csr.json | cfssljson -bare flanneld
 gencert client flanneld-csr.json flanneld
+
 log_info  "  Copy ETCD SSL to ${ETCD_SSL_DIR}"
 cp -p $SSL_DIR/peer.pem       $ETCD_SSL_DIR
 cp -p $SSL_DIR/peer-key.pem   $ETCD_SSL_DIR
@@ -249,6 +260,23 @@ cp -p $SSL_DIR/ca-key.pem     $ETCD_SSL_DIR
 cp -p $SSL_DIR/server.pem     $ETCD_SSL_DIR
 cp -p $SSL_DIR/server-key.pem $ETCD_SSL_DIR
 log_info  "  Copy ETCD SSL to ${ETCD_SSL_DIR} done "
-log_info  "  OK: EndofScript ${scriptname} "
-log_info  "  Save log in   ${LogFile}"
-exit 0
+
+inst_etcd
+xsync $SSL_DIR
+
+
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+if [ "$RC" == "0" ]; then
+  log_info   "  OK: EndofScript ${scriptname} "    | tee -a $LogFile
+else
+  log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
+fi
+ende=$(date +%s)
+diff=$((ende - starttime))
+log_info     "  $(date)   Runtime      :   $diff"  | tee -a $LogFile
+log_info     "  Save log to ${LogFile}         "   | tee -a $LogFile
+logrename  ${LogFile}
+exit ${RC}
