@@ -140,3 +140,7 @@ exit 0
 # --allocate-node-cidrs=true  use for flanneld
 # --cluster-cidr=10.244.0.0/16 use for flanneld
 # --leader-elect=true：集群运行模式，启用选举功能；被选为 leader 的节点负责处理工作，其它节点为阻塞状态；
+
+# --node-monitor-period=5s
+# --node-monitor-grace-period=40s
+# --pod-eviction-timeout=5m0s

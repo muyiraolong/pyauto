@@ -69,11 +69,11 @@ KUBE_APISERVER_OPTS="\"--logtostderr=false \
     --audit-log-path=${LOG_DIR}/k8s-audit.log \
     --audit-policy-file=${CFG_DIR}/audit-policy.yaml \
     --allow-privileged=true \
-	--anonymous-auth=false \
-	--bind-address=0.0.0.0 \
+    --anonymous-auth=false \
+    --bind-address=0.0.0.0 \
     --client-ca-file=${SSL_DIR}/ca.pem \
     --enable-aggregator-routing=true \
-	--enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,NodeRestriction \
+    --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,NodeRestriction \
     --etcd-servers=${ETCD_SERVERS} \
     --etcd-cafile=${SSL_DIR}/ca.pem \
     --etcd-certfile=${SSL_DIR}/apiserver-etcd-client.pem \
@@ -224,7 +224,7 @@ exit 0
 #--service-cluster-ip-rang					  address using for service
 #--allow-privileged       					  If true, allow privileged containers. [default=false]
 #--master is not using
-#--apiserver-count int					      The number of apiservers running in the cluster, must be a positive number. \
+##--apiserver-count int					      The number of apiservers running in the cluster, must be a positive number. \
 #												(In use when --endpoint-reconciler-type=master-count is enabled.) (default 1)
 #--endpoint-reconciler-type string             Use an endpoint reconciler (master-count, lease, none) (default "lease")		
 #--kubelet-preferred-address-types strings     List of the preferred NodeAddressTypes to use for kubelet connections. \

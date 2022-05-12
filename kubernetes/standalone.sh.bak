@@ -35,7 +35,10 @@ export KUBE_APISERVER="https://${APISERVER}:6443"
 if ! [ -d /etc/kubernetes ]; then
    mkdir /etc/kubernetes/{cfg,ssl,logs,flanneld,manifests,json}  -p
    mkdir /etc/kubernetes/logs/{kubelet,kube-proxy,kube-scheduler,kube-apiserver,kube-controller-manager,flanneld} -p
-fi
+else
+   rm -rf /etc/kubernetes/*
+   mkdir /etc/kubernetes/{cfg,ssl,logs,flanneld,manifests,json}  -p
+   mkdir /etc/kubernetes/logs/{kubelet,kube-proxy,kube-scheduler,kube-apiserver,kube-controller-manager,flanneld} -p
 
 if ! [ -d /var/kubernetes/logs ]; then
    mkdir /var/kubernetes/logs -p

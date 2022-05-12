@@ -85,7 +85,7 @@ Before=docker.service
 Type=notify
 EnvironmentFile=/etc/sysconfig/flanneld
 ExecStart=/usr/sbin/flanneld \$FLANNEL_OPTIONS
-ExecStartPost=/usr/local/mk-docker-opts.sh -k DOCKER_OPTS -d /etc/kubernetes/flanneld/docker_opts.env
+ExecStartPost=/usr/sbin/mk-docker-opts.sh -k DOCKER_OPTS -d /etc/kubernetes/flanneld/docker_opts.env
    
 Restart=always
 RestartSec=5

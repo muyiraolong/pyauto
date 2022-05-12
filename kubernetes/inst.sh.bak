@@ -41,36 +41,22 @@ fi
 #================================================================
 #  FUNCTIONS
 #================================================================
-do_exit() {
-  RC=$1
-  echo "$RC" >/tmp/RC.$$
-  exit $RC
-}
-
-if [ $# -gt 1 ]; then
-  usage
-  exit 8
-fi
-
 
 # init running env
 standalone()
 {
-  cp -p ${RUNDIR}/standalone.sh ~
-  echo "if [ -f ~/standalone.sh ]; then "   >> ~/.bash_profile
-  echo "    . ~/standalone.sh"              >> ~/.bash_profile
-  echo "fi"                                 >> ~/.bash_profile
-  source  ~/.bash_profile
-  sh cfssl_inst.sh
-  sh gencert.sh
-  sh etcd_inst.sh
-  sh etcd.sh
-  sh flanneld_inst.sh
-  flanneld_network_init
-  sh flanneld.sh $1
+  #cp -p ${RUNDIR}/standalone.sh ~
+  #echo " if [ -f ~/standalone.sh ]; then "   >> ~/.bash_profile
+  #echo "     . ~/standalone.sh"              >> ~/.bash_profile
+  #echo " fi"                                 >> ~/.bash_profile
+  #source  ~/.bash_profile
+  #sh gencert.sh
+  ##inst_etcd
+  #sh  etcd.sh
+  #flanneld_network
+  #sh flanneld.sh
   sh docker.sh
-  sh kubernetes_inst.sh
-  sh kubeconfig.sh $1
+  sh kubeconfig.sh
   sh kube-apiserver.sh
   sh kube-controller-manager.sh
   sh kube-schedule.sh
@@ -80,25 +66,21 @@ standalone()
 
 masterslave()
 {
-  cp -p ${RUNDIR}/master-slave.sh ~
-  log_info "  Start build cluaster"
+#  cp -p ${RUNDIR}/master-slave.sh ~
+#  log_info "  Start build cluaster"
   echo "if [ -f ~/master-slave.sh ]; then "   >> ~/.bash_profile
   echo "    . ~/master-slave.sh"              >> ~/.bash_profile
   echo "fi"                                   >> ~/.bash_profile
   source  ~/.bash_profile
-  inst_node master-slave.sh
-  inst_node package-pre.sh
-  inst_node etcd_inst.sh     
-  inst_balance masterconfig.sh $MASTERIP
-  inst_balance backupconfig.sh $BACKUPIP
-  sh cfssl_inst.sh
-  sh gencert.sh
+#  inst_node master-slave.sh
+#  inst_node package-pre.sh
+#  inst_balance masterconfig.sh $MASTERIP
+#  inst_balance backupconfig.sh $BACKUPIP
+#  sh gencert.sh
   inst_etcd etcd.sh
-  inst_node flanneld_inst.sh
-  flanneld_network_init
-  inst_node flanneld.sh $1
+  flanneld_network
+  inst_node flanneld.sh
   inst_node docker.sh
-  sh kubernetes_inst.sh
   inst_node kubeconfig.sh
   inst_master kube-apiserver.sh
   inst_master kube-controller-manager.sh
@@ -171,7 +153,7 @@ inst_balance()
 }
 
 # flanneld_network
-flanneld_network_init()
+flanneld_network()
 {
 source ~/.bash_profile
 export ETCDCTL_API=2
@@ -180,13 +162,13 @@ export endpoint="--endpoints=${ETCD_SERVERS}"
 etcdctl $certs $endpoint member list && etcdctl $certs $endpoint cluster-health
 if [ $? -eq 0 ]; then
   etcd is ready!
-else
-   log_error "check etcd status and try again"
+else:
+   echo "check etcd status and try again"
    exit 8
 fi
 etcdctl $certs $endpoint get /atomic.io/network/config
 if [ $? -eq 0 ]; then
-	log_info "    /atomic.io/network/config alread exist"
+	echo "/atomic.io/network/config alread exist"
 else
 	etcdctl $certs $endpoint mk /atomic.io/network/config '{"Network": "10.244.0.0/16","Backend": {"Type": "vxlan"}}'
 fi
@@ -203,8 +185,8 @@ if ! [ -d /var/kubernetes ] ; then
   mkdir /var/kubernetes/logs -p
 fi
 LOG_FILE_DIR="/var/kubernetes/logs"
-RC=0
-starttime=$(date +%s)
+
+i=1
 scriptname=$(basename $0)
 if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
   touch ${LOG_FILE_DIR}/${scriptname}.log
@@ -238,9 +220,3 @@ case $1 in
         usage
         ;;
 esac
-
-ende=$(date +%s)
-diff=$((ende - starttime))
-log_info  "  $(date)   Runtime      :   $diff" | tee -a $LogFile
-log_info  "  Save log to ${LogFile}             "  | tee -a $LogFile
-logrename  ${LogFile}

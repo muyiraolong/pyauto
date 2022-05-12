@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 #!/usr/bin/ksh
 #
 #=============================================================================
@@ -196,59 +195,59 @@ else
 fi
 sleep 2
 
-sed -e "s:clusteradmin:peer:g" template-csr.json > ${JSON_DIR}/etcdpeer-csr.json
+sed -e "s:clusteradmin:peer:g" ${RUNDIR}/template-csr.json > ${JSON_DIR}/etcdpeer-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=peer etcdpeer-csr.json |cfssljson -bare peer
 gencert peer etcdpeer-csr.json peer
 
-sed -e "s:clusteradmin:server:g" template-csr.json                       > ${JSON_DIR}/server-csr.json
+sed -e "s:clusteradmin:server:g" ${RUNDIR}/template-csr.json                       > ${JSON_DIR}/server-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server server-csr.json |cfssljson -bare server
 gencert server server-csr.json server
 
-sed -e "s:temp:apiserver-etcd-client:g" temp-client-csr.json              > ${JSON_DIR}/apiserver-etcd-client-csr.json
+sed -e "s:temp:apiserver-etcd-client:g" ${RUNDIR}/temp-client-csr.json              > ${JSON_DIR}/apiserver-etcd-client-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client apiserver-etcd-client-csr.json |cfssljson -bare apiserver-etcd-client
 gencert client apiserver-etcd-client-csr.json apiserver-etcd-client
 
-sed -e "s:temp:apiserver-kubelet-client:g" temp-client-csr.json            > ${JSON_DIR}/apiserver-kubelet-client-csr.json
+sed -e "s:temp:apiserver-kubelet-client:g" ${RUNDIR}/temp-client-csr.json            > ${JSON_DIR}/apiserver-kubelet-client-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client apiserver-kubelet-client-csr.json |cfssljson -bare apiserver-kubelet-client
 gencert client apiserver-kubelet-client-csr.json apiserver-kubelet-client
 
-sed -e "s:temp:front-proxy-client:g" temp-client-csr.json                  > ${JSON_DIR}/front-proxy-client-csr.json
+sed -e "s:temp:front-proxy-client:g" ${RUNDIR}/temp-client-csr.json                  > ${JSON_DIR}/front-proxy-client-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client front-proxy-client-csr.json |cfssljson -bare front-proxy-client
 gencert client front-proxy-client-csr.json front-proxy-client
 
-sed -e "s:temp:client:g" temp-client-csr.json                              > ${JSON_DIR}/client-csr.json
+sed -e "s:temp:client:g" ${RUNDIR}/temp-client-csr.json                              > ${JSON_DIR}/client-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client client-csr.json |cfssljson -bare client
 gencert client client-csr.json client
 
-sed -e "s:clusteradmin:system\:kube-apiserver:g" template-csr.json         > ${JSON_DIR}/kube-apiserver-csr.json
+sed -e "s:clusteradmin:system\:kube-apiserver:g" ${RUNDIR}/template-csr.json         > ${JSON_DIR}/kube-apiserver-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server kube-apiserver-csr.json |cfssljson -bare kube-apiserver
 gencert server kube-apiserver-csr.json kube-apiserver
 
-sed -e "s:clusteradmin:system\:kube-controller-manager:g" template-csr.json > ${JSON_DIR}/kube-controller-manager-csr.json
+sed -e "s:clusteradmin:system\:kube-controller-manager:g" ${RUNDIR}/template-csr.json > ${JSON_DIR}/kube-controller-manager-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server kube-controller-manager-csr.json |cfssljson -bare kube-controller-manager
 gencert server kube-controller-manager-csr.json kube-controller-manager
 
-sed -e "s:clusteradmin:system\:kube-scheduler:g" template-csr.json          > ${JSON_DIR}/kube-scheduler-csr.json
+sed -e "s:clusteradmin:system\:kube-scheduler:g" ${RUNDIR}/template-csr.json          > ${JSON_DIR}/kube-scheduler-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server kube-scheduler-csr.json |cfssljson -bare kube-scheduler
 gencert server kube-scheduler-csr.json kube-scheduler
 
-sed -e "s:clusteradmin:clusteradmin:g" template-csr.json                    > ${JSON_DIR}/kubectl-csr.json
+sed -e "s:clusteradmin:clusteradmin:g" ${RUNDIR}/template-csr.json                    > ${JSON_DIR}/kubectl-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server kubectl-csr.json |cfssljson -bare kubectl
 gencert server kubectl-csr.json kubectl
 
-sed -e "s:temp:system\:kubeproxy:g" temp-client-csr.json                    > ${JSON_DIR}/kube-proxy-csr.json
+sed -e "s:temp:system\:kubeproxy:g" ${RUNDIR}/temp-client-csr.json                    > ${JSON_DIR}/kube-proxy-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client kube-proxy-csr.json | cfssljson -bare kube-proxy
 gencert client kube-proxy-csr.json kube-proxy
 
-sed -e "s:temp:admin:g" temp-client-csr.json                                > ${JSON_DIR}/admin-csr.json
+sed -e "s:temp:admin:g" ${RUNDIR}/temp-client-csr.json                                > ${JSON_DIR}/admin-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server admin-csr.json | cfssljson -bare admin
 gencert server admin-csr.json admin
 
-sed -e "s:clusteradmin:system\:kubelet:g" template-csr.json                 > ${JSON_DIR}/kubelet-csr.json
+sed -e "s:clusteradmin:system\:kubelet:g" ${RUNDIR}/template-csr.json                 > ${JSON_DIR}/kubelet-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server kubelet-csr.json |cfssljson -bare kubelet
 gencert server kubelet-csr.json kubelet
 
-sed -e "s:clusteradmin:system\:flanneld:g" template-csr.json                > ${JSON_DIR}/flanneld-csr.json
+sed -e "s:clusteradmin:system\:flanneld:g" ${RUNDIR}/template-csr.json                > ${JSON_DIR}/flanneld-csr.json
 #cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client flanneld-csr.json | cfssljson -bare flanneld
 gencert client flanneld-csr.json flanneld
 
@@ -280,3 +279,9 @@ log_info     "  $(date)   Runtime      :   $diff"  | tee -a $LogFile
 log_info     "  Save log to ${LogFile}         "   | tee -a $LogFile
 logrename  ${LogFile}
 exit ${RC}
+
+
+#for i in {70..100}; do echo "\"192.168.1.${i}\",";done
+#for i in {70..100}; do echo "\"10.10.10.${i}\",";done
+#for i in {70..100}; do echo "\"win${i}\",";done
+#for i in {70..100}; do echo "\"win${i}.inno,com\",";done

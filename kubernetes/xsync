@@ -64,9 +64,32 @@ echo ${LogFile}
 #================================================================
 #     main
 #================================================================
+do_filecopy()
+{
+    targethost=$1
+    targetfile=$2
+    #5. 获取父目录
+    pdir=$(cd -P $(dirname $targetfile); pwd)
+    # 6. 获取当前文件的名称
+    fname=$(basename $targetfile)
+    if is_reachable ${targethost}; then
+        log_info "====================  ${targethost}  =
+        log_info "  copy $(hostname):${pdir}/${fna
+        ssh ${targethost}  "mkdir -p $pdir"
+        rsync -avz $pdir/$fname ${targethost}:$pdir
+        if [ $? -eq 0 ];then
+            log_info "  copy $(hostname):${pdir}/$
+        else
+            do_exit 8
+        fi
+    else
+        log_error "  Target ${targethost} not exist"
+        do_exit 8
+    fi
+}
+
 do_sync()
 {
-
     host=$1
     targetfile=$2
 
@@ -122,6 +145,7 @@ do_sync()
 #================================================================
 #     main
 #================================================================
+
 {
 #2. 遍历集群所有机器
 tmpfile=$$.fifo   # 创建管道名称
@@ -129,9 +153,8 @@ mkfifo $tmpfile   # 创建管道
 exec 6<>$tmpfile  # 创建文件标示4，以读写方式操作管道$tmpfile
 rm $tmpfile       # 将创建的管道文件清除
 thred=${#NODE_NAMES[@]}
-		
+	
 # 为并发线程创建相应个数的占位
-
 for (( i = 1;i<=${thred};i++ ));do echo;done >&6 # 将占位信息写入管道
 
 file2=$@
@@ -145,7 +168,7 @@ for host in `seq 0 ${#NODE_NAMES[@]}`
             let Count+=1
             {
                 log_info "  Parallel copy $Count"
-                do_sync ${NODE_NAMES[$host]} ${file2} 
+                do_sync ${NODE_NAMES[$host]} ${file2}
                 echo >&6
             } &
         fi
@@ -153,7 +176,6 @@ for host in `seq 0 ${#NODE_NAMES[@]}`
     wait
     exec 6>&-   # 关闭管道
 } 2>&1 | tee -a $LogFile
-
 
 if [ -f /tmp/RC.$$ ]; then
    RC=$(cat /tmp/RC.$$)
@@ -164,6 +186,7 @@ if [ "$RC" == "0" ]; then
 else
   log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
 fi
+
 ende=$(date +%s)
 diff=$((ende - starttime))
 log_info     "  $(date)   Runtime      :   $diff"  | tee -a $LogFile

@@ -9,7 +9,11 @@
 #================================================================
 prog="$(basename ${0})"
 RUNDIR="$( cd "$(dirname "${0}")" && pwd )"
+if ! [ -d /var/kubernetes ] ;then
+    mkdir -p /var/kubernetes/logs
+fi
 LOGDIR="/var/kubernetes/logs"
+LOG_FILE_DIR="/var/kubernetes/logs"
 # Set FUNCITONS_IMPORTED to do not import functions.ksh again
 FUNCTIONS_IMPORTED=1
 unset PYTHONHOME
@@ -280,4 +284,16 @@ filecreatedate=`date +%Y%m%d%H%M%S`
    log_error " $1 not exist "
    exit 16
  fi
+}
+#================================================================
+# packages
+#================================================================
+isInstalled() {
+    if rpm -q $1 &> /dev/null; then
+        log_info   "$1 is installed "
+        return 1
+    else
+        log_info   "$1 is not installed"
+        return 0
+    fi
 }

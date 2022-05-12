@@ -7,6 +7,7 @@ modprobe -- ip_vs_sh
 modprobe -- ip_vs_rr
 modprobe -- ip_vs_wrr
 modprobe -- nf_conntrack_ipv4
+#modprobe br_netfilter
 EOF
 chmod +x /etc/sysconfig/modules/ipvs.sh
 bash /etc/sysconfig/modules/ipvs.sh

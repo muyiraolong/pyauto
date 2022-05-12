@@ -86,6 +86,12 @@ KUBELET_OPTS="--kubeconfig=${CFG_DIR}/kubelet.kubeconfig \
    --log-dir=${LOG_DIR}/kubelet \
    --root-dir=/workdata/kubelet/${NODE_ADDRESS}"
 
+# --container-runtime=remote
+# --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock
+# --image-pull-progress-deadline=2m
+# --network-plugin=cni
+# --register-node=true
+
 echo "KUBELET_OPTS=$KUBELET_OPTS">${CFG_DIR}/kubelet.conf
 log_info "  Generate kubelet configure file ${CFG_DIR}/kubelet.conf done "
 
