@@ -61,6 +61,7 @@ standalone()
   echo "    . ~/standalone.sh"              >> ~/.bash_profile
   echo "fi"                                 >> ~/.bash_profile
   source  ~/.bash_profile
+  sh k8s-prepare.sh
   sh cfssl_inst.sh
   sh gencert.sh
   sh etcd_inst.sh
@@ -87,7 +88,7 @@ masterslave()
   echo "fi"                                   >> ~/.bash_profile
   source  ~/.bash_profile
   inst_node master-slave.sh
-  inst_node package-pre.sh
+  inst_node k8s-prepare.sh
   inst_node etcd_inst.sh     
   inst_balance masterconfig.sh $MASTERIP
   inst_balance backupconfig.sh $BACKUPIP
