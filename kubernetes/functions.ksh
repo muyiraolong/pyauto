@@ -365,24 +365,24 @@ parall() {
 tmpfile=$$.fifo   # 创建管道名称
 mkfifo /tmp/$tmpfile   # 创建管道
 exec 6<>/tmp/$tmpfile  # 创建文件标示4，以读写方式操作管道$tmpfile
-rm /tmp/$tmpfile       # 将创建的管道文件清除
-thred=${#NODE_NAMES[@]}
+rm -rf /tmp/$tmpfile       # 将创建的管道文件清除
+thred=${#ETCD_NODE_NAMES[@]}
 	
 # 为并发线程创建相应个数的占位
 for (( i = 1;i<=${thred};i++ ));do echo;done >&6 # 将占位信息写入管道
 
 Count=0
-for host in `seq 0 ${#NODE_NAMES[@]}`
+for host in `seq 0 ${#ETCD_NODE_NAMES[@]}`
     do
-        if test -z ${NODE_NAMES[$host]} ; then
+        if test -z ${ETCD_NODE_NAMES[$host]} ; then
             break
         else
             read -u6
             let Count+=1
             {
                 log_info "  Parallel execute $Count"
-                log_info "Exectue $1 in server ${NODE_NAMES[$host]}  "
-                ssh  ${NODE_NAMES[$host]} "sh $1"
+                log_info "Exectue $1 in server ${ETCD_NODE_NAMES[$host]}  "
+                ssh  ${ETCD_NODE_NAMES[$host]} "sh $1"
                 echo >&6
             } &
         fi

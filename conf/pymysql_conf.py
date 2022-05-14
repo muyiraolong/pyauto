@@ -2,11 +2,11 @@ import pymysql
 from timeit import default_timer
 
 
-host = 'win88.inno.com'
-port = 3308
-db = 'www'
-user = 'root'
-password = 'xxxxx'
+host = 'win75.inno.com'
+port = 30336
+db = 'eygle'
+user = 'lih8hz'
+password = 'Lenovo@2020'
 
 
 # ---- 用pymysql 操作数据库

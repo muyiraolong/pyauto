@@ -3,7 +3,7 @@ import threading
 import sys,os
 import datetime
 from conf import logconf
-from conf import pyliunx_conf
+from conf import pylinuxconf
 import getpass
 
 
@@ -12,7 +12,7 @@ if __name__ == '__main__':
     logger = logconf.logconf(logtarget)
 
     hostname = ""
-
+    password = 'Lenovo@2020'
     with open("vmhost", "r", encoding='utf-8') as batch:
         hostnames = batch.readlines()
         batch.seek(0)
@@ -25,18 +25,18 @@ if __name__ == '__main__':
     for hostname in hostnames:
         targethost = hostname.strip("\n")
 
-        username = "root"  # 用户名
-        sshkey = input("Passwor or key ? Yes for key ,No for password :")
-
-        while True:
-            if sshkey == "Yes" or sshkey == "":
-                password = ""
-                logger.info("Login with ssh key")
-                break
-            else:
-                logger.info("Login with Password")
-                password = getpass.getpass('please type password of %s :' % username)
-                break
+        # username = "root"  # 用户名
+        # sshkey = input("Passwor or key ? Yes for key ,No for password :")
+        #
+        # while True:
+        #     if sshkey == "Yes" or sshkey == "":
+        #         password = ""
+        #         logger.info("Login with ssh key")
+        #         break
+        #     else:
+        #         logger.info("Login with Password")
+        #         password = getpass.getpass('please type password of %s :' % username)
+        #         break
 
         pyliunx_conf.get_connection(targethost,password)
         batch = threading.Thread(pyliunx_conf.paramiko.execute())

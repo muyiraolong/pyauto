@@ -159,8 +159,8 @@ kubectl config use-context default --kubeconfig=${CFG_DIR}/flanneld.kubeconfig
 log_info "  Generate ${CFG_DIR}/flanneld.kubeconfig for Flanneld done"
 } 2>&1 | tee -a $LogFile
 
-sh ${RUNDIR}/xsync ${CFG_DIR}/
-sh ${RUNDIR}/xsync /root/.kube/config
+sh ${RUNDIR}/xsync -d ${CFG_DIR}/
+sh ${RUNDIR}/xsync -d /root/.kube/config
 if [ -f /tmp/RC.$$ ]; then
    RC=$(cat /tmp/RC.$$)
    rm -f /tmp/RC.$$

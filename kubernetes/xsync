@@ -12,7 +12,8 @@
 #%
 #% EXAMPLES
 #%    ${prog} file1
-#%
+#%    sh xsyncs -h "${NODE_NAMES[@]}" -d inst.sh.bak
+#%    sh xsyncs -d inst.sh.bak
 #================================================================
 #  HISTORY
 #     20220104  innod motingxia@163.com
@@ -39,7 +40,7 @@ do_exit() {
   exit $RC
 }
 
-if [ $# -lt 1 ]
+if [ $# -lt 2 ]
 then
   usage
   exit 8;
@@ -146,28 +147,68 @@ do_sync()
 #================================================================
 
 {
+nodes=()
+i=0
+thred=0
+while [ $# -gt 0 ]; do
+    case ${1} in
+    -h)
+        shift
+        echo $1
+        echo
+        nodes[i]=$1
+        let i=i+1
+        shift
+        ;;
+    -d)
+       shift
+       echo $@
+       break
+       ;;
+    *)
+       echo $1
+       echo
+       nodes[i]=$1
+       let i=i+1
+       shift
+       continue
+       ;;
+    esac
+done
+
 #2. 遍历集群所有机器
 tmpfile=$$.fifo   # 创建管道名称
 mkfifo /tmp/$tmpfile   # 创建管道
 exec 6<>/tmp/$tmpfile  # 创建文件标示4，以读写方式操作管道$tmpfile
-rm /tmp/$tmpfile       # 将创建的管道文件清除
-thred=${#NODE_NAMES[@]}
+rm -rf /tmp/$tmpfile       # 将创建的管道文件清除
+
+
+
+if [ -z ${#nodes} ] ;then
+    thred=${#nodes[@]}
+else
+    thred=${#NODE_NAMES[@]}
+    for (( j=0;j<${thred};j++ ));
+       do 
+          nodes[j]=${NODE_NAMES[j]};
+       done
+fi
 	
 # 为并发线程创建相应个数的占位
 for (( i = 1;i<=${thred};i++ ));do echo;done >&6 # 将占位信息写入管道
 
 file2=$@
 Count=0
-for host in `seq 1 ${#NODE_NAMES[@]}`
+for host in `seq 0 ${#nodes[@]}`
     do
-        if test -z ${NODE_NAMES[$host]} ; then
+        if test -z ${nodes[$host]} ; then
             break
         else
             read -u6
             let Count+=1
             {
                 log_info "  Parallel copy $Count"
-                do_sync ${NODE_NAMES[$host]} ${file2}
+                do_sync ${nodes[$host]} ${file2}
                 echo >&6
             } &
         fi

@@ -66,8 +66,8 @@ mywget https://github.com/flannel-io/flannel/releases/download/v0.15.1/flannel-v
 
 tar -xvf ${RUNDIR}/flannel-v0.15.1-linux-amd64.tar.gz -C /usr/sbin/
 
-sh ${RUNDIR}/xsync /usr/sbin/flanneld
-sh ${RUNDIR}/xsync /usr/sbin/mk-docker-opts.sh
+sh ${RUNDIR}/xsync -d /usr/sbin/flanneld
+sh ${RUNDIR}/xsync -d /usr/sbin/mk-docker-opts.sh
 
 if flanneld -version ; then
   echo

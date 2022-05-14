@@ -97,8 +97,8 @@ else
 fi
 
 log_info "    copy /usr/local/go and /usr/local/etcd to other etcd server"
-sh ${RUNDIR}/xsync /usr/local/go
-sh ${RUNDIR}/xsync /usr/local/etcd
+sh ${RUNDIR}/xsync -d /usr/local/go
+sh ${RUNDIR}/xsync -d /usr/local/etcd
 log_info "    copy /usr/local/go and /usr/local/etcd to other etcd server done"
 } 2>&1 | tee -a $LogFile
 
