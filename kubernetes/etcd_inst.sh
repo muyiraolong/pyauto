@@ -40,15 +40,19 @@ fi
 #######################################################################################################################
 ## MAIN
 #######################################################################################################################
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/RC.$$
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
 fi
-
-source ~/.bash_profile
-
+RC=0
 scriptname=$(basename $0)
-
+starttime=$(date +%s)
 if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
   touch ${LOG_FILE_DIR}/${scriptname}.log
   LogFile=${LOG_FILE_DIR}/${scriptname}.log
@@ -59,19 +63,11 @@ else
 fi
 export LogFile=${LOG_FILE_DIR}/${scriptname}.log
 echo ${LogFile}
+source ~/.bash_profile
 
 {
 log_info "Start  install GOLANG"
-while true
-  do
-    sleep 5
-    wget https://go.dev/dl/go1.16.10.linux-amd64.tar.gz
-    if [ $? -eq 0 ]; then
-      log_info "download https://go.dev/dl/go1.16.10.linux-amd64.tar.gz successfully."
-      break;
-    fi
-  done
-
+mywget https://go.dev/dl/go1.16.10.linux-amd64.tar.gz
 tar -xvf ${RUNDIR}/go1.16.10.linux-amd64.tar.gz -C /usr/local
 chown root:root -R /usr/local/go
 echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.bash_profile
@@ -80,17 +76,11 @@ go version
 if [ $? -eq 0 ]; then
   log_info "GOLANG install successfully"
 fi
+echo;echo
 
-log_info "Start install etcd"
-while true
-  do
-    sleep 5
-    wget https://github.com/etcd-io/etcd/archive/v3.5.0.zip
-    if [ $? -eq 0 ]; then
-      log_info "download https://github.com/etcd-io/etcd/archive/v3.5.0.zip successfully."
-    break;
-    fi
-  done
+log_info "    Start install etcd"
+mywget https://github.com/etcd-io/etcd/archive/v3.5.0.zip
+
 unzip ${RUNDIR}/v3.5.0.zip -d /usr/local
 mv /usr/local/etcd-3.5.0 /usr/local/etcd
 echo "export PATH=\$PATH:/usr/local/etcd/bin" >> ~/.bash_profile
@@ -99,15 +89,34 @@ cd /usr/local/etcd/ && ./build.sh
 cd ${RUNDIR}
 
 if [ $? -eq 0 ]; then
-  log_info "etcd install successfully"
+  log_info "    etcd install successfully"
   etcd --version
+else 
+  log_error "    etcd install failed,pls check the error"
+  do_exit 8
 fi
+
+log_info "    copy /usr/local/go and /usr/local/etcd to other etcd server"
+sh ${RUNDIR}/xsync /usr/local/go
+sh ${RUNDIR}/xsync /usr/local/etcd
+log_info "    copy /usr/local/go and /usr/local/etcd to other etcd server done"
 } 2>&1 | tee -a $LogFile
 
 export PATH=$PATH:/usr/local/go/bin
 export PATH=$PATH:/usr/local/etcd/bin
 
-log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
-log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+if [ "$RC" == "0" ]; then
+  log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
+else
+  log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
+fi
+ende=$(date +%s)
+diff=$((ende - starttime))
+log_info  "  $(date)   Runtime      :   $diff" | tee -a $LogFile
+log_info  "  Save log to ${LogFile}             "  | tee -a $LogFile
 logrename  ${LogFile}
-exit 0
+exit ${RC}

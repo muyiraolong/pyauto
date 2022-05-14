@@ -130,6 +130,54 @@ create_dir() { # $1->path $2->user [$3->group] [$4->mode]
     fi
 }
 
+check_file() {  # $1 ->file name
+    if [ -f $1 ];then
+        log_info "  $1  is exist and will be delete"
+        rm -rf $1
+        log_info "  $1  is delete"
+    fi
+}
+
+check_ssh() { # ${1}->ssh_cmd ${2}->host ${3}->user
+  result=$($DIRECT_RSH -o StrictHostKeyChecking=no ${1} "env" 2>/dev/null 0</dev/null)
+  if echo "${result}" | grep SHELL >/dev/null; then
+    if [[ -n ${3} ]]; then
+      log_info "ssh to ${2} (with user ${3}) possible" 1>&2
+    else
+      log_info "ssh to ${2} possible" 1>&2
+    fi
+    echo ${1}
+
+    # Check Host Keys
+    if echo "$result" | grep -q "host key"; then
+      log_debug "host key cleanup required"
+      IP=$(get_ip ${2})
+
+      # Cleanup of current user
+      ssh-keygen -R ${2} >/dev/null 2>&1
+      ssh-keygen -R ${IP} >/dev/null 2>&1
+      # Cleanup of SSH USER
+      if [[ -n "${3}" ]]; then
+        ssh-keygen -R ${2} -f /home/${3}/.ssh/known_hosts >/dev/null 2>&1
+        ssh-keygen -R ${IP} -f /home/${3}/.ssh/known_hosts >/dev/null 2>&1
+      fi
+
+      # Add Key again
+      $DIRECT_RSH_Q -o StrictHostKeyChecking=no ${1} "env" >/dev/null 2>&1 0</dev/null
+    fi
+
+    # CUST EXPORT
+    if [[ -n "$EXPORT_CUST" ]]; then
+      echo "${result}" | grep CUSTOMER | cut -f2 -d'=' | tr "[:lower:]" "[:upper:]" >${EXPORT_CUST}
+    fi
+
+    return 0
+  else
+    log_debug "no ssh to ${2} possible (ssh args: ${1})" 1>&2
+    return 8
+  fi
+}
+
 #option force delete does not bypass protectedlist
 remove_recursive_dir() { # $1->path [$2 -force]
     if [[ ${2} != "force" ]]; then
@@ -297,3 +345,48 @@ isInstalled() {
         return 0
     fi
 }
+mywget() {
+  while true
+    do
+       sleep 5
+       wget $1
+       if [ $? -eq 0 ]; then
+         log_info "download $1 successfully."
+          break;
+       fi
+    done
+}
+
+#================================================================
+# parall run
+#================================================================
+parall() {
+#2. 遍历集群所有机器
+tmpfile=$$.fifo   # 创建管道名称
+mkfifo /tmp/$tmpfile   # 创建管道
+exec 6<>/tmp/$tmpfile  # 创建文件标示4，以读写方式操作管道$tmpfile
+rm /tmp/$tmpfile       # 将创建的管道文件清除
+thred=${#NODE_NAMES[@]}
+	
+# 为并发线程创建相应个数的占位
+for (( i = 1;i<=${thred};i++ ));do echo;done >&6 # 将占位信息写入管道
+
+Count=0
+for host in `seq 0 ${#NODE_NAMES[@]}`
+    do
+        if test -z ${NODE_NAMES[$host]} ; then
+            break
+        else
+            read -u6
+            let Count+=1
+            {
+                log_info "  Parallel execute $Count"
+                log_info "Exectue $1 in server ${NODE_NAMES[$host]}  "
+                ssh  ${NODE_NAMES[$host]} "sh $1"
+                echo >&6
+            } &
+        fi
+    done 
+    wait
+    exec 6>&-   # 关闭管道
+} 

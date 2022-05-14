@@ -260,8 +260,9 @@ cp -p $SSL_DIR/server.pem     $ETCD_SSL_DIR
 cp -p $SSL_DIR/server-key.pem $ETCD_SSL_DIR
 log_info  "  Copy ETCD SSL to ${ETCD_SSL_DIR} done "
 
-inst_etcd
-xsync $SSL_DIR
+# inst_etcd
+sh ${RUNDIR}/xsync $SSL_DIR
+sh ${RUNDIR}/xsync $ETCD_SSL_DIR
 
 
 if [ -f /tmp/RC.$$ ]; then

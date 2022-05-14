@@ -57,55 +57,110 @@ fi
 standalone()
 {
   cp -p ${RUNDIR}/standalone.sh ~
+  log_info "  Start build kubernetes standalone"
   echo "if [ -f ~/standalone.sh ]; then "   >> ~/.bash_profile
   echo "    . ~/standalone.sh"              >> ~/.bash_profile
   echo "fi"                                 >> ~/.bash_profile
   source  ~/.bash_profile
-  sh k8s-prepare.sh
-  sh cfssl_inst.sh
-  sh gencert.sh
-  sh etcd_inst.sh
-  sh etcd.sh
-  sh flanneld_inst.sh
+  sh ${RUNDIR}/k8s-prepare.sh
+  sh ${RUNDIR}/cfssl_inst.sh
+  sh ${RUNDIR}/gencert.sh
+  sh ${RUNDIR}/etcd_inst.sh
+  sh ${RUNDIR}/etcd.sh
+  sh ${RUNDIR}/flanneld_inst.sh
   flanneld_network_init
-  sh flanneld.sh $1
-  sh docker.sh
-  sh kubernetes_inst.sh
-  sh kubeconfig.sh $1
-  sh kube-apiserver.sh
-  sh kube-controller-manager.sh
-  sh kube-schedule.sh
-  sh kube-proxy.sh
-  sh kubelet.sh
+  sh ${RUNDIR}/flanneld.sh
+  sh ${RUNDIR}/docker.sh
+  sh ${RUNDIR}/kubernetes_inst.sh
+  sh ${RUNDIR}/kubeconfig.sh 
+  sh ${RUNDIR}/kube-apiserver.sh
+  sh ${RUNDIR}/kube-controller-manager.sh
+  sh ${RUNDIR}/kube-schedule.sh
+  sh ${RUNDIR}/kube-proxy.sh
+  sh ${RUNDIR}/kubelet.sh
+  kcheck
 }
 
 masterslave()
-{
-  cp -p ${RUNDIR}/master-slave.sh ~
-  log_info "  Start build cluaster"
+{ 
+  cp -p ${RUNDIR}/{*.sh,*.py,*.ksh} ~
+  cp -p ${RUNDIR}/xsync ~
+  sh xsync ~/check_port.py
+  for k8files in $(ls ~/*.sh)
+      do 
+          sh xsync $k8files
+      done
+  log_info "  Start build kubernetes master and slave"
+  sh xsync ~/functions.ksh
   echo "if [ -f ~/master-slave.sh ]; then "   >> ~/.bash_profile
   echo "    . ~/master-slave.sh"              >> ~/.bash_profile
   echo "fi"                                   >> ~/.bash_profile
   source  ~/.bash_profile
+  sh xsync ~/.bash_profile
   inst_node master-slave.sh
-  inst_node k8s-prepare.sh
-  inst_node etcd_inst.sh     
+  inst_node k8s_prepare.sh   
   inst_balance masterconfig.sh $MASTERIP
   inst_balance backupconfig.sh $BACKUPIP
   sh cfssl_inst.sh
   sh gencert.sh
-  inst_etcd etcd.sh
-  inst_node flanneld_inst.sh
+  sh etcd_inst.sh  
+  sh xsync ~/.bash_profile
+  parall etcd.sh
+  sh flanneld_inst.sh
   flanneld_network_init
-  inst_node flanneld.sh $1
-  inst_node docker.sh
+  inst_node flanneld.sh
+  inst_node docker.sh 
   sh kubernetes_inst.sh
-  inst_node kubeconfig.sh
-  inst_master kube-apiserver.sh
-  inst_master kube-controller-manager.sh
-  inst_master kube-schedule.sh
+  sh kubeconfig.sh
+  sh kube-apiserver.sh
+  ssh ${BACKUPNODE} "sh ~/kube-apiserver.sh"
+  sh kube-controller-manager.sh
+  ssh ${BACKUPNODE} "sh ~/kube-controller-manager.sh"
+  sh kube-schedule.sh
+  ssh ${BACKUPNODE} "sh ~/kube-schedule.sh"
   inst_node kube-proxy.sh
-  inst_node kubelet.sh
+  inst_node kubelet.sh 
+  kcheck
+}
+
+cluster()
+{ 
+  echo ${RUNDIR}
+  cp -p ${RUNDIR}/{*.sh,*.py,*.ksh} ~
+  sh xsync check_port.py
+  for k8files in $(ls *.sh)
+      do 
+          sh xsync $k8files
+      done
+  log_info "  Start build kubernetes cluster"
+  sh xsync ~/funcations.ksh
+  echo "if [ -f ~/cluster.sh ]; then "   >> ~/.bash_profile
+  echo "    . ~/cluster.sh"              >> ~/.bash_profile
+  echo "fi"                                   >> ~/.bash_profile
+  source  ~/.bash_profile
+  inst_node master-slave.sh
+  inst_node k8s_prepare.sh   
+  inst_balance masterconfig.sh $MASTERIP
+  inst_balance backupconfig.sh $BACKUPIP
+  sh cfssl_inst.sh
+  sh gencert.sh
+  sh etcd_inst.sh  
+  sh xsync ~/.bash_profile
+  parall etcd.sh
+  sh flanneld_inst.sh
+  flanneld_network_init
+  inst_node flanneld.sh
+  inst_node docker.sh 
+  sh kubernetes_inst.sh
+  sh kubeconfig.sh
+  sh kube-apiserver.sh
+  ssh ${BACKUPNODE} "sh ~/kube-apiserver.sh"
+  sh kube-controller-manager.sh
+  ssh ${BACKUPNODE} "sh ~/kube-controller-manager.sh"
+  sh kube-schedule.sh
+  ssh ${BACKUPNODE} "sh ~/kube-schedule.sh"
+  inst_node kube-proxy.sh
+  inst_node kubelet.sh 
 }
 
 # INIT master node
@@ -117,9 +172,10 @@ inst_master()
 			if [ -z ${MASTER_IPS[$i]} ]; then	
 				break
 			else
-				echo "copy $1 to server ${MASTER_IPS[$i]} "
-				scp -p ${PWD}/$1 ${MASTER_IPS[$i]}:~
-				echo "Exectue $1 in server ${MASTER_IPS[$i]}  "
+				# log_info "copy $1 to server ${MASTER_IPS[$i]} "
+				# scp -p ${PWD}/$1 ${MASTER_IPS[$i]}:~
+				# log_info "Exectue $1 in server ${MASTER_IPS[$i]}  "
+        check_ssh ${MASTER_IPS[$i]}
 				ssh ${MASTER_IPS[$i]} "sh /root/$1"
 			fi
 		done
@@ -129,15 +185,17 @@ inst_master()
 # install worknode
 inst_node()
 {
+  . ~/master-slave.sh
 	i=0 
 	for i in `seq 0 ${#NODE_IPS[@]}` ;
 		do 
 			if [ -z ${NODE_IPS[$i]} ]; then	
 				break
 			else
-				echo "copy $1 to server ${NODE_IPS[$i]} "
-				scp -p ${PWD}/$1 ${NODE_IPS[$i]}:~
-				echo "Exectue $1 in server ${NODE_IPS[$i]}  "
+      	# log_info "copy $1 to server ${NODE_IPS[$i]} "
+        check_ssh ${NODE_IPS[$i]}
+				# scp -p ${PWD}/$1 ${NODE_IPS[$i]}:~
+				# log_info "Exectue $1 in server ${NODE_IPS[$i]}  "
 				#ssh ${NODE_IPS[$i]} "whoami"
 				ssh ${NODE_IPS[$i]} "sh /root/$1"
 			fi
@@ -153,16 +211,27 @@ inst_etcd()
 			if [ -z ${ETCD_NODE_NAMES_DOMAIN[$i]} ]; then	
 				break
 			else
-				log_info "copy $1 to server ${ETCD_NODE_NAMES_DOMAIN[$i]} "
-				scp -p ${PWD}/$1 ${ETCD_NODE_NAMES_DOMAIN[$i]}:~
-				scp -rp ${ETCD_SSL_DIR} ${ETCD_NODE_NAMES_DOMAIN[$i]}:${ETCD_SSL_DIR}
-				scp -rp ${SSL_DIR} ${ETCD_NODE_NAMES_DOMAIN[$i]}:${SSL_DIR}
-				echo "Exectue $1 in server ${ETCD_NODE_NAMES_DOMAIN[$i]}  "
-				ssh ${ETCD_NODE_NAMES_DOMAIN[$i]} "sh /root/$1"
+				# log_info "copy $1 to server ${ETCD_NODE_NAMES_DOMAIN[$i]} "
+				# scp -p ${PWD}/$1 ${ETCD_NODE_NAMES_DOMAIN[$i]}:~
+				# scp -rp ${ETCD_SSL_DIR} ${ETCD_NODE_NAMES_DOMAIN[$i]}:${ETCD_SSL_DIR}
+				# scp -rp ${SSL_DIR} ${ETCD_NODE_NAMES_DOMAIN[$i]}:${SSL_DIR}
+				# log_info "Exectue $1 in server ${ETCD_NODE_NAMES_DOMAIN[$i]}  "
+        sshcmd="$1"
+        check_ssh ${ETCD_NODE_NAMES_DOMAIN[$i]}
+				ssh ${ETCD_NODE_NAMES_DOMAIN[$i]} "sh $1 &"
 			fi
 		done
 }
 
+kcheck() {
+  echo 
+  kubectl get cs
+  echo
+  kubectl cluster-info 
+  echo
+  kubectl get nodes 
+  echo
+}
 
 # install master and slave balance
 inst_balance()
@@ -193,7 +262,6 @@ else
 fi
 }
 
-
 ##########################################################
 #                       MAIN                             #
 ##########################################################
@@ -217,7 +285,7 @@ else
 fi
 
 export LogFile=${LOG_FILE_DIR}/${scriptname}.log
-echo ${LogFile}
+echo "log file: ${LogFile}"
 
 if [ $# -gt 1 ]; then
   echo  $#
@@ -230,7 +298,7 @@ case $1 in
         standalone
         ;;
       cl)
-        masterslave
+        cluster
         ;;
       ms)
         masterslave

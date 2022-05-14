@@ -37,12 +37,19 @@ fi
 #=============================================================================
 #  FUNCTIONS
 #=============================================================================
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/RC.$$
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
 fi
-i=1
+RC=0
 scriptname=$(basename $0)
+starttime=$(date +%s)
 if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
   touch ${LOG_FILE_DIR}/${scriptname}.log
   LogFile=${LOG_FILE_DIR}/${scriptname}.log
@@ -57,7 +64,21 @@ echo ${LogFile}
 source ~/.bash_profile
 # MASTER_ADDRESS=$1
 {
+if ps -ef|grep -i kube-controller-manager|grep -v kube-controller-manager.sh|grep -v grep; then
+  log_warning "  kube-controller-manager is running,stop it"
+  if ! systemctl stop kube-controller-manager; then
+    sleep 5
+    pids=$(ps -ef|grep -i kube-controller-manager|grep -v kube-controller-manager.sh|grep -v grep| awk '{printf("%s ",$2)}')
+    log_warning "   Execute kill -9 ${pids} to stop kube-controller-manager"
+    kill -9 ${pids} 2>/dev/null
+  fi
+fi
+log_info "  kube-controller-manager is not running"
+
+check_file ${CFG_DIR}/kube-controller-manager.conf
+check_file /usr/lib/systemd/system/kube-controller-manager.service
 log_info "  Start generate ${CFG_DIR}/kube-controller-manager.conf"
+
 KUBE_CONTROLLER_MANAGER_OPTS="--logtostderr=false \
   --allocate-node-cidrs=true \
   --authentication-kubeconfig=${CFG_DIR}/kube-controller-manager.kubeconfig \
@@ -90,7 +111,10 @@ KUBE_CONTROLLER_MANAGER_OPTS="--logtostderr=false \
 
 echo "KUBE_CONTROLLER_MANAGER_OPTS="$KUBE_CONTROLLER_MANAGER_OPTS"">${CFG_DIR}/kube-controller-manager.conf
 log_info "  Ggenerate ${CFG_DIR}/kube-controller-manager.conf done!!"
-
+echo
+log_info "  configure  file kube-controller-manager is set as "
+log_info "  KUBE_CONTROLLER_MANAGER_OPTS=$KUBE_CONTROLLER_MANAGER_OPTS"
+echo
 log_info "  Start generate /usr/lib/systemd/system/kube-controller-manager.service"
 cat <<EOF >/usr/lib/systemd/system/kube-controller-manager.service
 [Unit]
@@ -108,20 +132,37 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOF
 log_info "  Generate /usr/lib/systemd/system/kube-controller-manager.service done"
+echo
 
 log_info "  Tring to start kube-controller-manager.service"
-systemctl daemon-reload;systemctl enable kube-controller-manager;systemctl restart kube-controller-manager
-if [ $? -eq 0 ]; then
+systemctl daemon-reload;systemctl enable kube-controller-manager;systemctl restart kube-controller-manager;systemctl status kube-controller-manager.service
+if ps -ef|grep -i kube-controller-manager|grep -v kube-controller-manager.sh|grep -v grep; then
+  echo
   log_info "  kube-controller-manager is running successfully!"
 else
   log_error "  start kube-controller-manager failed,pls check in log file /var/log/message"
   log_info "  tail -f /var/log/message"
+  do_exit 8
 fi
+echo
 } 2>&1 | tee -a $LogFile
 
-log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
-log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
-exit 0
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+if [ "$RC" == "0" ]; then
+  log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
+else
+  log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
+fi
+
+ende=$(date +%s)
+diff=$((ende - starttime))
+log_info  "  $(date)   Runtime      :   $diff" | tee -a $LogFile
+log_info  "  Save log to ${LogFile}             "  | tee -a $LogFile
+logrename  ${LogFile}
+exit ${RC}
 
 # --port=0：关闭监听 http /metrics 的请求，同时 --address 参数无效，--bind-address 参数有效；
 # --secure-port=10252、--bind-address=0.0.0.0: 在所有网络接口监听 10252 端口的 https /metrics 请求；

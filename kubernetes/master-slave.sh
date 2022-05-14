@@ -11,6 +11,7 @@ export NODE_IPS=(10.10.10.70 10.10.10.71 10.10.10.72)
 export MASTER_IPS=(10.10.10.70 10.10.10.71)
 export MASTERIP=10.10.10.70
 export BACKUPIP=10.10.10.71
+export K8STYPE=MS
 
 export NODE_NAMES_DOMAIN=("win70.inno.com" "win71.inno.com" "win72.inno.com")
 export NODE_NAMES=("win70" "win71" "win72")
@@ -54,7 +55,7 @@ export ETCD_DATA_DIR=/etc/etcd/data
 export ETCD_WAL_DIR=/etc/etcd/data/wal
 
 # docker 数据目录
-export DOCKER_DIR=/workdata/data/docker
+export DOCKER_DIR=/var/data/docker
 export LOG_FILE_DIR=/var/kubernetes/logs
 export PATH=$PATH:/usr/local/go/bin
 export PATH=$PATH:/usr/local/etcd/bin
@@ -114,7 +115,6 @@ export FLANNEL_ETCD_PREFIX="/atomic.io/network"
 
 # 节点间互联网络接口名称
 export IFACE=ens224
-
 
 ## 以下参数一般不需要修改
 # TLS Bootstrapping 使用的 Token，可以使用命令 head -c 16 /dev/urandom | od -An -t x | tr -d ' ' 生成

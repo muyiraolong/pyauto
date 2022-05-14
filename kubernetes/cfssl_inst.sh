@@ -62,52 +62,29 @@ echo ${LogFile}
 
 {
 log_info "Start install cfssl"
-while true
-  do
-    sleep 5
-    wget https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssl_1.6.1_linux_amd64
-    if [ $? -eq 0 ]; then
-      log_info "download https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssl_1.6.1_linux_amd64 successfully."
-      break;
-    fi
-  done
+mywget https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssl_1.6.1_linux_amd64
 
 cp -p ${RUNDIR}/cfssl_1.6.1_linux_amd64 /usr/sbin/cfssl
 if [ $? -eq 0 ]; then
   log_info "cfssl install with version $(cfssl version) successfully"
 fi
+echo;echo
 
 log_info "Start install cfssl-certinfo"
-while true
-  do
-    sleep 5
-    wget https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssl-certinfo_1.6.1_linux_amd64
-    if [ $? -eq 0 ]; then
-      log_info "download https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssl-certinfo_1.6.1_linux_amd64 successfully."
-      break;
-    fi
-  done
+mywget https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssl-certinfo_1.6.1_linux_amd64
 
 cp -p ${RUNDIR}/cfssl-certinfo_1.6.1_linux_amd64 /usr/sbin/cfssl-certinfo
 if [ $? -eq 0 ]; then
   log_info "cfssl-certinfo install successfully"
 fi
-
+echo;echo
 log_info "Start install cfssljson"
-while true
-  do
-    sleep 5
-    wget https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssljson_1.6.1_linux_amd64
-    if [ $? -eq 0 ]; then
-      log_info "download  https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssljson_1.6.1_linux_amd64 successfully."
-      break;
-    fi
-  done
-
+mywget https://github.com/cloudflare/cfssl/releases/download/v1.6.1/cfssljson_1.6.1_linux_amd64
 cp -p ${RUNDIR}/cfssljson_1.6.1_linux_amd64 /usr/sbin/cfssljson
 if [ $? -eq 0 ]; then
   log_info "cfssljson install successfully"
 fi
+echo;echo
 } 2>&1 | tee -a $LogFile
 
 log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile

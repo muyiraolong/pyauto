@@ -34,12 +34,19 @@ fi
 #=============================================================================
 #  FUNCTIONS
 #=============================================================================
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/RC.$$
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
 fi
-i=1
+RC=0
 scriptname=$(basename $0)
+starttime=$(date +%s)
 if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
   touch ${LOG_FILE_DIR}/${scriptname}.log
   LogFile=${LOG_FILE_DIR}/${scriptname}.log
@@ -50,22 +57,22 @@ else
 fi
 export LogFile=${LOG_FILE_DIR}/${scriptname}.log
 echo ${LogFile}
-
 source ~/.bash_profile
 
-#rpm -e podman-1.0.0-2.git921f98f.module+el8+2785+ff8a053f.x86_64 --force
-#rpm -e podman-1.0.0-2.git921f98f.module+el8+2785+ff8a053f.x86_64
-#rpm -e buildah-1.5-3.gite94b4f9.module+el8+2769+577ad176.x86_64 --force
-#rpm -e buildah-1.5-3.gite94b4f9.module+el8+2769+577ad176.x86_64
-#rpm -e fuse-overlayfs --force
-#rpm -e slirp4netns --force
-#rpm -e pcp-testsuite-4.3.0-3.el8.x86_64 --force
-#rpm -e pcp-pmda-docker-4.3.0-3.el8.x86_64 --force
-#rpm -ivh /mnt/hgfs/kubernetes/0_package/Docker/package/first/fuse-overlayfs-0.7.8-1.module_el8.3.0+479+69e2ae26.x86_64.rpm
-#rpm -ivh /mnt/hgfs/kubernetes/0_package/Docker/package/first/slirp4netns-0.4.2-3.git21fdece.module_el8.3.0+479+69e2ae26.x86_64.rpm
-#rpm -Uvh /mnt/hgfs/kubernetes/0_package/Docker/package/second/*
-#rpm -Uvh /mnt/hgfs/kubernetes/0_package/Docker/package/third/libseccomp-2.5.1-1.el8.x86_64.rpm
-#rpm -ivh /mnt/hgfs/kubernetes/0_package/Docker/package/third/libseccomp-devel-2.5.1-1.el8.x86_64.rpm
+
+# rpm -e podman-1.0.0-2.git921f98f.module+el8+2785+ff8a053f.x86_64 --force
+# rpm -e podman-1.0.0-2.git921f98f.module+el8+2785+ff8a053f.x86_64
+# rpm -e buildah-1.5-3.gite94b4f9.module+el8+2769+577ad176.x86_64 --force
+# rpm -e buildah-1.5-3.gite94b4f9.module+el8+2769+577ad176.x86_64
+# rpm -e fuse-overlayfs --force
+# rpm -e slirp4netns --force
+# rpm -e pcp-testsuite-4.3.0-3.el8.x86_64 --force
+# rpm -e pcp-pmda-docker-4.3.0-3.el8.x86_64 --force
+# rpm -ivh /mnt/hgfs/kubernetes/package/Docker/package/first/fuse-overlayfs-0.7.8-1.module_el8.3.0+479+69e2ae26.x86_64.rpm
+# rpm -ivh /mnt/hgfs/kubernetes/package/Docker/package/first/slirp4netns-0.4.2-3.git21fdece.module_el8.3.0+479+69e2ae26.x86_64.rpm
+# rpm -Uvh /mnt/hgfs/kubernetes/package/Docker/package/second/*
+# rpm -Uvh /mnt/hgfs/kubernetes/package/Docker/package/third/libseccomp-2.5.1-1.el8.x86_64.rpm
+# rpm -ivh /mnt/hgfs/kubernetes/package/Docker/package/third/libseccomp-devel-2.5.1-1.el8.x86_64.rpm
 
 # systemctl start docker && systemctl enable docker &&
 {
@@ -157,6 +164,18 @@ else
 fi
 } 2>&1 | tee -a $LogFile
 
-log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
-log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
-exit 0
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+if [ "$RC" == "0" ]; then
+  log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
+else
+  log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
+fi
+ende=$(date +%s)
+diff=$((ende - starttime))
+log_info  "  $(date)   Runtime      :   $diff" | tee -a $LogFile
+log_info  "  Save log to ${LogFile}             "  | tee -a $LogFile
+logrename  ${LogFile}
+exit ${RC}

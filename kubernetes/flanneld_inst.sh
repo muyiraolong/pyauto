@@ -61,25 +61,37 @@ export LogFile=${LOG_FILE_DIR}/${scriptname}.log
 echo ${LogFile}
 
 {
-log_info "Start  install flanneld"
-while true
-  do
-    sleep 5
-    wget https://github.com/flannel-io/flannel/releases/download/v0.15.1/flannel-v0.15.1-linux-amd64.tar.gz
-    if [ $? -eq 0 ]; then
-      log_info "download https://github.com/flannel-io/flannel/releases/download/v0.15.1/flannel-v0.15.1-linux-amd64.tar.gz successfully."
-      break;
-    fi
-  done
+log_info "   Start  install flanneld"
+mywget https://github.com/flannel-io/flannel/releases/download/v0.15.1/flannel-v0.15.1-linux-amd64.tar.gz
 
 tar -xvf ${RUNDIR}/flannel-v0.15.1-linux-amd64.tar.gz -C /usr/sbin/
-flanneld -version 
-if [ $? -eq 0 ]; then
-  log_info "flanneld install with version $(flanneld -version) successfully"
+
+sh ${RUNDIR}/xsync /usr/sbin/flanneld
+sh ${RUNDIR}/xsync /usr/sbin/mk-docker-opts.sh
+
+if flanneld -version ; then
+  echo
+  log_info "   flanneld install with version $(flanneld -version) successfully"
+else 
+  log_error "   Flanneld install failed"   
+  do_exit 8
+  echo 
 fi
+echo;echo
 } 2>&1 | tee -a $LogFile
 
-log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
-log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+if [ "$RC" == "0" ]; then
+  log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
+else
+  log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
+fi
+ende=$(date +%s)
+diff=$((ende - starttime))
+log_info  "  $(date)   Runtime      :   $diff" | tee -a $LogFile
+log_info  "  Save log to ${LogFile}             "  | tee -a $LogFile
 logrename  ${LogFile}
-exit 0
+exit ${RC}

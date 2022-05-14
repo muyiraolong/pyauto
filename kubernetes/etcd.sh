@@ -118,7 +118,7 @@ debug: false
 logger: zap
 log-outputs: [stderr]
 EOF
-log_info " ${ETCD_CFG_DIR}/etcd.yml generated as below:"
+log_info "  ${ETCD_CFG_DIR}/etcd.yml generated as below:"
 cat   ${ETCD_CFG_DIR}/etcd.yml
 log_info " Generate etcd.service file "
 cat <<EOF >/usr/lib/systemd/system/etcd.service
@@ -145,7 +145,7 @@ EOF
 log_info "  Start etcd.service......"
 
 {
-systemctl daemon-reload;systemctl enable etcd;systemctl restart etcd
+systemctl daemon-reload;systemctl enable etcd;systemctl restart etcd;systemctl status etcd.service
 if [ $? -eq 0 ]; then
   log_info "  ETCD is running successfully! \n"
 else

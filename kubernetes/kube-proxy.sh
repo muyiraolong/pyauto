@@ -37,6 +37,12 @@ fi
 #=============================================================================
 #  FUNCTIONS
 #=============================================================================
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/RC.$$
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
@@ -57,7 +63,22 @@ echo ${LogFile}
 source ~/.bash_profile
 
 {
+if ps -ef|grep -i kube-proxy|grep -v grep|grep -v kube-proxy.sh; then
+  log_info "  kubelet is running,stop it"
+  if ! systemctl stop kube-proxy; then
+    sleep 5
+    pids=$(ps -ef|grep -i kube-proxy|grep -v grep|grep -v kube-proxy.sh| awk '{printf("%s ",$2)}')
+    log_warning "   Execute kill -9 ${pids} to stop kube-proxy"
+    kill -9 ${pids} 2>/dev/null
+   fi
+fi
+log_info "  kube-proxy is not running"
 NODE_ADDRESS=$(hostname)
+
+check_file ${CFG_DIR}/kube-proxy.yaml
+check_file /etc/kubernetes/cfg/kube-proxy.conf
+check_file /usr/lib/systemd/system/kube-proxy.service
+
 log_info "  Create kube-proxy config yaml file"
 # kubeadm configprint init-defaults --component-configs KubeProxyConfiguration >kube-proxy.conf
 cat <<EOF >${CFG_DIR}/kube-proxy.yaml
@@ -92,12 +113,15 @@ ipvs:
   tcpTimeout: 0s
   udpTimeout: 0s  
 EOF
-log_info "  kube-proxy config yaml file is created"
-export KUBE_PROXY_OPTS="--logtostderr=false --v=2 --log-dir=${LOG_DIR}/kube-proxy --config=${CFG_DIR}/kube-proxy.yaml"
-echo "KUBE_PROXY_OPTS=$KUBE_PROXY_OPTS">/etc/kubernetes/cfg/kube-proxy.conf
-log_info "  kube-proxy config file is /etc/kubernetes/cfg/kube-proxy.conf"
+log_info "  kube-proxy config yaml file ${CFG_DIR}/kube-proxy.yaml is created"
 
-log_info "  Create kube-proxy service"
+export KUBE_PROXY_OPTS="--logtostderr=false --v=2 --log-dir=${LOG_DIR}/kube-proxy --config=${CFG_DIR}/kube-proxy.yaml"
+
+log_info "  start generate kube-proxy config file /etc/kubernetes/cfg/kube-proxy.conf"
+echo "KUBE_PROXY_OPTS=$KUBE_PROXY_OPTS">/etc/kubernetes/cfg/kube-proxy.conf
+log_info "  kube-proxy config file /etc/kubernetes/cfg/kube-proxy.conf is generated"
+
+log_info "  Create kube-proxy service file /usr/lib/systemd/system/kube-proxy.service"
 cat <<EOF >/usr/lib/systemd/system/kube-proxy.service
 [Unit]
 Description=Kubernetes Proxy
@@ -111,23 +135,27 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 EOF
-log_info  "  kube-proxy service is created"
+log_info  "  kube-proxy service file /usr/lib/systemd/system/kube-proxy.service is created"
 
 
 log_info  "  Tring to start kube-proxy service"
-systemctl daemon-reload;systemctl enable kube-proxy;systemctl restart kube-proxy
+systemctl daemon-reload;systemctl enable kube-proxy;systemctl restart kube-proxy;systemctl status kube-proxy.service
 #SupportIPVSProxyMode：if not work ,remove this line
 #clusterCIDR 后面CNI网络的IP段，不能与任何网络重复，否则获报错
 
 systemctl daemon-reload;systemctl enable kubelet;systemctl restart kubelet
-if [ $? -eq 0 ]; then
+if ps -ef|grep -i kube-proxy|grep -v grep|grep -v kube-proxy.sh; then
+  echo
   log_info "  kube-proxy is running successfully!"
+  echo
 else
   log_error "Start kube-proxy failed,pls check in log file /var/log/message "
   log_info  "${LOG_DIR}"
+  do_exit 8
 fi
 } 2>&1 | tee -a $LogFile
 
 log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
 log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
-exit 0
+logrename  ${LogFile}
+exit ${RC}

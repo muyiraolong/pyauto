@@ -15,6 +15,7 @@ export NODE_IP=${MASTERIP}
 export MASTER_IPS=${MASTERIP}
 export MASTERIP=${MASTERIP}
 export BACKUPIP=${MASTERIP}
+export K8STYPE=ST
 
 export NODE_NAMES_DOMAIN=$(hostname)
 export NODE_NAMES=$(hostname -s)

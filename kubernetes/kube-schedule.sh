@@ -37,6 +37,12 @@ fi
 #=============================================================================
 #  FUNCTIONS
 #=============================================================================
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/RC.$$
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
@@ -57,6 +63,19 @@ log_info "  "${LogFile}
 source ~/.bash_profile
 
 {
+if ps -ef|grep -i kube-scheduler|grep -v grep|grep -v kube-scheduler.sh; then
+  log_info "  kube-scheduler is running,stop it"
+  if ! systemctl stop kube-scheduler; then
+    sleep 5
+    pids=$(ps -ef|grep -i kube-scheduler|grep -v grep|grep -v kube-scheduler.sh| awk '{printf("%s ",$2)}')
+    log_warning "   Execute kill -9 ${pids} to stop kube-scheduler"
+    kill -9 ${pids} 2>/dev/null
+   fi
+fi
+log_info "  kube-scheduler is not running"
+check_file ${CFG_DIR}/kube-scheduler.conf
+check_file /usr/lib/systemd/system/kube-scheduler.service
+
 # MASTER_ADDRESS=$1
 KUBE_SCHEDULER_OPTS="--kubeconfig=${CFG_DIR}/kube-scheduler.kubeconfig --address=127.0.0.1  --cert-dir=${SSL_DIR} --leader-elect=true \
  --logtostderr=false \
@@ -76,7 +95,8 @@ KUBE_SCHEDULER_OPTS="--kubeconfig=${CFG_DIR}/kube-scheduler.kubeconfig --address
 echo "KUBE_SCHEDULER_OPTS=$KUBE_SCHEDULER_OPTS">${CFG_DIR}/kube-scheduler.conf
 log_info "  configure  file kube-scheduler is set as "
 log_info "  KUBE_SCHEDULER_OPTS=$KUBE_SCHEDULER_OPTS"
-log_info "  Start setup kube-scheduler.service"
+echo 
+log_info "  Start generate  kube-scheduler.service file /usr/lib/systemd/system/kube-scheduler.service"
 cat <<EOF >/usr/lib/systemd/system/kube-scheduler.service
 [Unit]
 Description=Kubernetes Scheduler
@@ -94,20 +114,28 @@ WantedBy=multi-user.target
 EOF
 
 cat /usr/lib/systemd/system/kube-scheduler.service
-log_info "  Setup kube-scheduler.service done"
+log_info "  Generate  kube-scheduler.service file /usr/lib/systemd/system/kube-scheduler.service done!"
+echo 
 log_info "  Try to starting  kube-scheduler"
-systemctl daemon-reload;systemctl enable kube-scheduler;systemctl restart kube-scheduler
-if [ $? -eq 0 ]; then
+systemctl daemon-reload;systemctl enable kube-scheduler;systemctl restart kube-scheduler;systemctl status kube-scheduler.service
+if ps -ef|grep -i kube-scheduler|grep -v kube-scheduler.sh|grep -v grep; then
   log_info "  kube-scheduler is running successfully!"
 else
   log_eror "start kube-scheduler failed,pls check in log file /var/log/message"
   log_info "tail -f /var/log/message"
+  do_exit 8
 fi
 } 2>&1 | tee -a $LogFile
 
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+
 log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
 log_info  "  Save log in ${LogFile}"       | tee -a $LogFile
-exit 0
+logrename  ${LogFile}
+exit ${RC}
 
 # --address：在 127.0.0.1:10251 端口接收 http /metrics 请求；kube-scheduler 目前还不支持接收 https 请求；
 # --kubeconfig：指定 kubeconfig 文件路径，kube-scheduler 使用它连接和验证 kube-apiserver；

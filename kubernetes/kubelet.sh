@@ -39,9 +39,6 @@ do_exit() {
   exit $RC
 }
 
-
-
-
 if [ $# -gt 0 ]; then
   usage
   exit 8
@@ -60,22 +57,31 @@ fi
 export LogFile=${LOG_FILE_DIR}/${scriptname}.log
 echo ${LogFile}
 
-. ${RUNDIR}/master-slave.sh
+source ~/.bash_profile
 
 #================================================================
 #  Main
 #================================================================
 NODE_ADDRESS=$(hostname)
 {
-log_info "  Generate kubelet configure file ${CFG_DIR}/kubelet.conf "
-
-if [ -f /workdata/kubelet/${NODE_ADDRESS} ];then
-   log_info "/workdata/kubelet/${NODE_ADDRESS}  is exist"
-   systemctl stop kubelet
-   rm -rf /workdata/kubelet/${NODE_ADDRESS}
+if ps -ef|grep -i kubelet|grep -v grep|grep -v kube-controller-manager|grep -v kubelet.sh|grep -v kube-apiserver; then
+  log_warning "  kubelet is running,stop it"
+  if ! systemctl stop kubelet; then
+    sleep 5
+    pids=$(ps -ef|grep -i kubelet|grep -v grep|grep -v kube-controller-manager|grep -v kubelet.sh|grep -v kube-apiserver| awk '{printf("%s ",$2)}')
+    log_warning "   Execute kill -9 ${pids} to stop kubelet"
+    kill -9 ${pids} 2>/dev/null
+  fi
 fi
-mkdir /workdata/kubelet/${NODE_ADDRESS} -p
-log_info "  /workdata/kubelet/${NODE_ADDRESS}  is create"
+log_info "  kubelet is not running"
+
+check_file /var/kubelet/${NODE_ADDRESS} 
+check_file ${CFG_DIR}/kubelet.yaml 
+check_file ${CFG_DIR}/kubelet.conf 
+check_file /usr/lib/systemd/system/kubelet.service 
+
+mkdir /var/kubelet/${NODE_ADDRESS} -p
+log_info "  /var/kubelet/${NODE_ADDRESS}  is create"
 
 KUBELET_OPTS="--kubeconfig=${CFG_DIR}/kubelet.kubeconfig \
    --runtime-cgroups=/systemd/system.slice \
@@ -84,7 +90,7 @@ KUBELET_OPTS="--kubeconfig=${CFG_DIR}/kubelet.kubeconfig \
    --logtostderr=false \
    --v=2 \
    --log-dir=${LOG_DIR}/kubelet \
-   --root-dir=/workdata/kubelet/${NODE_ADDRESS}"
+   --root-dir=/var/kubelet/${NODE_ADDRESS}"
 
 # --container-runtime=remote
 # --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock
@@ -92,11 +98,11 @@ KUBELET_OPTS="--kubeconfig=${CFG_DIR}/kubelet.kubeconfig \
 # --network-plugin=cni
 # --register-node=true
 
+log_info "  Generate kubelet configure file ${CFG_DIR}/kubelet.conf "
 echo "KUBELET_OPTS=$KUBELET_OPTS">${CFG_DIR}/kubelet.conf
 log_info "  Generate kubelet configure file ${CFG_DIR}/kubelet.conf done "
 
 log_info "  Generate ${CFG_DIR}/kubelet.yaml "
-
 #kubeadm config print init-defaults --component-configs KubeletConfiguration >kubelet.yml generate kubelet.yml
 cat <<EOF >${CFG_DIR}/kubelet.yaml
 kind: KubeletConfiguration
@@ -166,6 +172,7 @@ nodeStatusUpdateFrequency: 0s
 EOF
 log_info "  Generate ${CFG_DIR}/kubelet.yaml done"
 
+log_info "  Generate /usr/lib/systemd/system/kubelet.service "
 cat <<EOF >/usr/lib/systemd/system/kubelet.service
 [Unit]
 Description=Kubernetes Kubelet
@@ -181,12 +188,17 @@ KillMode=process
 [Install]
 WantedBy=multi-user.target
 EOF
-
-systemctl daemon-reload;systemctl enable kubelet;systemctl start kubelet
-if [ $? -eq 0 ]; then
+log_info "  Generate /usr/lib/systemd/system/kubelet.service done"
+log_info "  Try to start and enable kubelet.service "
+systemctl daemon-reload;systemctl enable kubelet;systemctl start kubelet;systemctl status kubelet
+if ps -ef|grep -i kubelet|grep -v grep|grep -v kube-controller-manager|grep -v kubelet.sh|grep -v kube-apiserver; then
   log_info "  Start  kubelet successfully!!"
-  sleep 10
-  kubectl get nodes && kubectl get csr
+  sleep 5
+  echo 
+  kubectl get nodes|grep ${NODE_ADDRESS}
+  echo 
+  kubectl get csr
+  echo 
 else
   log_error "start kubelet failed,pls check in log file /var/log/message"
   log_error "tail -f /var/log/message"

@@ -62,21 +62,20 @@ echo ${LogFile}
 
 {
 log_info "Start install kubernetes"
-while true
-  do
-    sleep 5
-    wget https://dl.k8s.io/v1.22.4/kubernetes-server-linux-amd64.tar.gz
-    if [ $? -eq 0 ]; then
-      log_info "download https://dl.k8s.io/v1.22.4/kubernetes-server-linux-amd64.tar.gz successfully."
-      break;
-    fi
-  done
-
+mywget https://dl.k8s.io/v1.22.4/kubernetes-server-linux-amd64.tar.gz
 tar -xvf ${RUNDIR}/kubernetes-server-linux-amd64.tar.gz 
 cp -p ${RUNDIR}/kubernetes/server/bin/{kubectl,kube-apiserver,kube-controller-manager,kube-scheduler,kube-proxy,kubelet} /usr/sbin
+sh ${RUNDIR}/xsync /usr/sbin/kubectl
+sh ${RUNDIR}/xsync /usr/sbin/kube-apiserver
+sh ${RUNDIR}/xsync /usr/sbin/kube-controller-manager
+sh ${RUNDIR}/xsync /usr/sbin/kube-scheduler
+sh ${RUNDIR}/xsync /usr/sbin/kube-proxy
+sh ${RUNDIR}/xsync /usr/sbin/kubelet
+
 if [ $? -eq 0 ]; then
   log_info "kubernetes install with version $(echo "https://dl.k8s.io/v1.24.0/kubernetes-server-linux-amd64.tar.gz"|cut -d '/' -f 4) successfully"
 fi
+echo;echo
 } 2>&1 | tee -a $LogFile
 
 log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile

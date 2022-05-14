@@ -49,22 +49,6 @@ if [ $# -gt 1 ]; then
 fi
 RC=0
 
-
-case $1 in
-      st)
-        . ${RUNDIR}/standalone.sh
-        ;;
-      cl)
-        . ${RUNDIR}/master-slave.sh
-        ;;
-      ms)
-        . ${RUNDIR}/master-slave.sh
-        ;;
-      *)
-        usage
-        ;;
-esac
-
 starttime=$(date +%s)
 scriptname=$(basename $0)
 if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
@@ -77,6 +61,7 @@ else
 fi
 export LogFile=${LOG_FILE_DIR}/${scriptname}.log
 echo ${LogFile}
+source ~/.bash_profile
 
 # APISERVER=10.10.10.72
 # SSL_DIR=/etc/kubernetes/ssl
@@ -174,6 +159,8 @@ kubectl config use-context default --kubeconfig=${CFG_DIR}/flanneld.kubeconfig
 log_info "  Generate ${CFG_DIR}/flanneld.kubeconfig for Flanneld done"
 } 2>&1 | tee -a $LogFile
 
+sh ${RUNDIR}/xsync ${CFG_DIR}/
+sh ${RUNDIR}/xsync /root/.kube/config
 if [ -f /tmp/RC.$$ ]; then
    RC=$(cat /tmp/RC.$$)
    rm -f /tmp/RC.$$

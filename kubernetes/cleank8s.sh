@@ -57,12 +57,15 @@ systemctl stop kube-apiserver.service kube-scheduler.service kube-controller-man
 systemctl stop kube-proxy.service kubelet.service etcd.service flanneld.service
 systemctl stop docker.service
 {
-rm -rf /etc/etcd /etc/kubernetes
+rm -rf /etc/etcd 
+rm -rf /etc/kubernetes
 rm -rf /usr/local/etcd
 rm -rf /usr/local/go
 rm -rf /usr/sbin/{flanneld,mk-docker-opts.sh,kubelet,kube-proxy}
 rm -rf /usr/sbin/{kube-apiserver,kube-controller-manager,kube-scheduler,kubectl}
 rm -rf /usr/sbin/{cfssljson,cfssl-certinfo,cfssl}
+rm -rf /var/kubernetes/logs
+rm -rf /usr/lib/systemd/system/{kube-apiserver.service,kube-controller-manager.service,kube-scheduler.service,kube-proxy.service,kubelet.service}
 rm -rf ${RUNDIR}/{go1.16.10.linux-amd64.tar.gz,v3.5.0.zip,kubernetes-server-linux-amd64.tar.gz,cfssljson_1.6.1_linux_amd64,cfssl-certinfo_1.6.1_linux_amd64,cfssl_1.6.1_linux_amd64,flannel-v0.15.1-linux-amd64.tar.gz,kubernetes,flanneld,mk-docker-opts.sh,README.md}
 
 } 2>&1 | tee -a $LogFile

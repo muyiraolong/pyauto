@@ -45,9 +45,8 @@ then
   exit 8;
 fi
 
-. ${RUNDIR}/master-slave.sh
+source ~/.bash_profile
 RC=0
-
 starttime=$(date +%s)
 scriptname=$(basename $0)
 if ! [ -f ${LOG_FILE_DIR}/${APPNAME}${scriptname}.log  ];then
@@ -73,12 +72,12 @@ do_filecopy()
     # 6. 获取当前文件的名称
     fname=$(basename $targetfile)
     if is_reachable ${targethost}; then
-        log_info "====================  ${targethost}  =
-        log_info "  copy $(hostname):${pdir}/${fna
+        log_info "====================  ${targethost}  ===================="
+        log_info "   Start  copy $(hostname):${pdir}/${fname}"
         ssh ${targethost}  "mkdir -p $pdir"
         rsync -avz $pdir/$fname ${targethost}:$pdir
         if [ $? -eq 0 ];then
-            log_info "  copy $(hostname):${pdir}/$
+            log_info "  copy $(hostname):${pdir}/${fname} done"
         else
             do_exit 8
         fi
@@ -104,7 +103,7 @@ do_sync()
             fname=$(basename $targetfile)
             if is_reachable ${host}; then
                 log_info "====================  ${host}  ===================="
-                log_info "  copy $(hostname):${pdir}/${fname} to ${host}:$pdir/${fname}"
+                log_info "  Start copy $(hostname):${pdir}/${fname} to ${host}:$pdir/${fname}"
                 ssh ${host}  "mkdir -p $pdir"
                 rsync -avz $pdir/$fname ${host}:$pdir
                 if [ $? -eq 0 ];then
@@ -149,9 +148,9 @@ do_sync()
 {
 #2. 遍历集群所有机器
 tmpfile=$$.fifo   # 创建管道名称
-mkfifo $tmpfile   # 创建管道
-exec 6<>$tmpfile  # 创建文件标示4，以读写方式操作管道$tmpfile
-rm $tmpfile       # 将创建的管道文件清除
+mkfifo /tmp/$tmpfile   # 创建管道
+exec 6<>/tmp/$tmpfile  # 创建文件标示4，以读写方式操作管道$tmpfile
+rm /tmp/$tmpfile       # 将创建的管道文件清除
 thred=${#NODE_NAMES[@]}
 	
 # 为并发线程创建相应个数的占位
@@ -159,7 +158,7 @@ for (( i = 1;i<=${thred};i++ ));do echo;done >&6 # 将占位信息写入管道
 
 file2=$@
 Count=0
-for host in `seq 0 ${#NODE_NAMES[@]}`
+for host in `seq 1 ${#NODE_NAMES[@]}`
     do
         if test -z ${NODE_NAMES[$host]} ; then
             break

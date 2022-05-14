@@ -37,12 +37,19 @@ fi
 #=============================================================================
 #  FUNCTIONS
 #=============================================================================
+do_exit() {
+  RC=$1
+  echo "$RC" >/tmp/RC.$$
+  exit $RC
+}
+
 if [ $# -gt 0 ]; then
   usage
   exit 8
 fi
-i=1
+RC=0
 scriptname=$(basename $0)
+starttime=$(date +%s)
 if ! [ -f ${LOG_FILE_DIR}/${scriptname}.log  ];then
   touch ${LOG_FILE_DIR}/${scriptname}.log
   LogFile=${LOG_FILE_DIR}/${scriptname}.log
@@ -58,6 +65,21 @@ source ~/.bash_profile
 {
 # MASTER_ADDRESS=$1
 # ETCD_SERVERS="${MASTER_ADDRESS}:2379"
+if ps -ef|grep -i kube-apiserver|grep -v kube-apiserver.sh|grep -v grep; then
+  log_warning "  kube-apiserver is running,stop it"
+  if ! systemctl stop kube-apiserver; then
+    sleep 5
+    pids=$(ps -ef|grep -i kube-apiserver|grep -v kube-apiserver.sh|grep -v grep| awk '{printf("%s ",$2)}')
+    log_warning "   Execute kill -9 ${pids} to stop kube-apiserver"
+    kill -9 ${pids} 2>/dev/null
+  fi
+fi
+log_info "  kube-apiserver is not running"
+
+check_file ${CFG_DIR}/kube-apiserver.conf
+check_file ${CFG_DIR}/audit-policy.yaml
+check_file /usr/lib/systemd/system/kube-apiserver.service
+
 log_info "  Start generate ${CFG_DIR}/kube-apiserver.conf"
 KUBE_APISERVER_OPTS="\"--logtostderr=false \
     --advertise-address=${MASTER_ADDRESS} \
@@ -195,19 +217,36 @@ ExecStart=/usr/sbin/kube-apiserver \$KUBE_APISERVER_OPTS
 WantedBy=multi-user.target
 EOF
 log_info "  Generate /usr/lib/systemd/system/kube-apiserver.service"
-log_info "  Try to start kube-apiserver.service"
-systemctl daemon-reload && systemctl enable kube-apiserver && systemctl restart kube-apiserver
-if [ $? -eq 0 ]; then
+
+log_info "  Try to start and enable kube-apiserver.service"
+echo
+systemctl daemon-reload && systemctl enable kube-apiserver && systemctl restart kube-apiserver;systemctl status kube-apiserver
+echo
+if ps -ef|grep -i kube-apiserver|grep -v kube-apiserver.sh|grep -v grep; then
   log_info "  kube-apiserver is running successfully!"
 else
   log_info "  Start kube-apiserver failed,pls check in log file /var/log/message"
   log_info "  tail -f /var/log/message"
+  do_exit 8
 fi
 } 2>&1 | tee -a $LogFile
 
-log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
-log_info  "  Save log in   ${LogFile}"       | tee -a $LogFile
-exit 0
+if [ -f /tmp/RC.$$ ]; then
+   RC=$(cat /tmp/RC.$$)
+   rm -f /tmp/RC.$$
+fi
+if [ "$RC" == "0" ]; then
+  log_info  "  OK: EndofScript ${scriptname} " | tee -a $LogFile
+else
+  log_error  "  ERROR: EndofScript ${scriptname} " | tee -a $LogFile
+fi
+ende=$(date +%s)
+diff=$((ende - starttime))
+log_info  "  $(date)   Runtime      :   $diff" | tee -a $LogFile
+log_info  "  Save log to ${LogFile}             "  | tee -a $LogFile
+logrename  ${LogFile}
+exit ${RC}
+
 #--authorization-mode=Node,RBAC： 开启 Node 和 RBAC 授权模式，拒绝未授权的请求；
 #--enable-admission-plugins：启用 ServiceAccount 和 NodeRestriction；
 #--service-account-key-file：签名 ServiceAccount Token 的公钥文件，kube-controller-manager 的 --service-account-private-key-file 指定私钥文件，两者配对使用；
