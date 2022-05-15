@@ -7,7 +7,7 @@ import re
 import  datetime
 
 user = 'root'
-password = 'Lenovo@2020'
+password = 'xxxxxxx'
 #pkey = r'"F:\myauto\pysh\id_rsa"'
 
 

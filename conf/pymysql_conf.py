@@ -5,8 +5,8 @@ from timeit import default_timer
 host = 'win75.inno.com'
 port = 30336
 db = 'eygle'
-user = 'lih8hz'
-password = 'Lenovo@2020'
+user = 'root'
+password = 'xxxxxxx'
 
 
 # ---- 用pymysql 操作数据库
